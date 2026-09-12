@@ -181,7 +181,7 @@
 
 .field--grow .input--area {
     flex: 1 1 auto;
-    min-height: 200px;
+    min-height: 150px;
     max-height: none;
 }
 
@@ -338,31 +338,6 @@ select.input {
     gap: 10px;
     padding: 12px;
     border-top: 1px solid var(--border);
-    max-height: max(160px, calc(100dvh - 470px));
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
-}
-
-.params__grid::-webkit-scrollbar {
-    width: 8px;
-}
-
-.params__grid::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.params__grid::-webkit-scrollbar-thumb {
-    background: var(--border-strong);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-    border-radius: 999px;
-}
-
-.params__grid::-webkit-scrollbar-thumb:hover {
-    background: var(--text-faint);
-    background-clip: padding-box;
 }
 
 .field--compact .field__label {

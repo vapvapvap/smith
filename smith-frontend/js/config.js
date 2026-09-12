@@ -1,11 +1,15 @@
-const DEFAULT_BACKEND_PORT = 8080;
+const DEFAULT_BACKEND_PORT = 3616;
 
 function defaultBaseUrl() {
     const { protocol, hostname } = window.location;
-    if ((protocol === 'http:' || protocol === 'https:') && hostname) {
-        return `${protocol}//${hostname}:${DEFAULT_BACKEND_PORT}`;
+    if (!hostname) {
+        return `http://localhost:${DEFAULT_BACKEND_PORT}`;
     }
-    return `http://localhost:${DEFAULT_BACKEND_PORT}`;
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    if (protocol === 'https:' || !isLocal) {
+        return `${protocol}//${hostname}`;
+    }
+    return `${protocol}//${hostname}:${DEFAULT_BACKEND_PORT}`;
 }
 
 function resolveBaseUrl() {

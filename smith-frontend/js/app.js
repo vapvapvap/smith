@@ -1,4 +1,4 @@
-import { fetchModels, complete, streamCompletion, me, logout } from './api.js';
+import { fetchModels, streamCompletion, me, logout } from './api.js';
 import { CONTEXT_CHAR_LIMIT } from './config.js';
 import { MessageView } from './render.js';
 import {
@@ -15,7 +15,6 @@ const el = (id) => document.getElementById(id);
 
 const dom = {
     model: el('model'),
-    stream: el('stream-toggle'),
     context: el('context-toggle'),
     newChat: el('new-chat'),
     clearChat: el('clear-chat'),
@@ -117,7 +116,6 @@ function renderMessages() {
 
 function applySettingsToInputs() {
     const s = state.settings;
-    dom.stream.checked = !!s.stream;
     dom.context.checked = !!s.context;
     el('thinking').value = s.thinking;
     el('reasoning_effort').value = s.reasoning_effort;
@@ -195,7 +193,7 @@ function buildPayload(prompt) {
     const payload = {
         prompt,
         model: s.model,
-        stream: !!s.stream,
+        stream: true,
         thinking: s.thinking,
         reasoning_effort: s.reasoning_effort,
     };
@@ -269,36 +267,28 @@ async function send() {
 
     const payload = buildPayload(prompt);
     try {
-        if (state.settings.stream) {
-            await streamCompletion(payload, {
-                onChunk: (data) => {
-                    assistantMessage.content += data?.content || '';
-                    assistantMessage.reasoningContent += data?.reasoningContent || '';
-                    updateMessageView(assistantMessage, true);
-                },
-                onUsage: (data) => {
-                    assistantMessage.usage = data;
-                    updateMessageView(assistantMessage, true);
-                },
-                onDone: (data) => {
-                    assistantMessage.finishReason = data?.finishReason;
-                    assistantMessage.pending = false;
-                    updateMessageView(assistantMessage, true);
-                },
-                onError: (data) => {
-                    assistantMessage.pending = false;
-                    assistantMessage.error = true;
-                    assistantMessage.content = data?.message || 'Ошибка провайдера';
-                    updateMessageView(assistantMessage);
-                },
-            });
-        } else {
-            const result = await complete(payload);
-            assistantMessage.content = result.content || '';
-            assistantMessage.reasoningContent = result.reasoningContent || '';
-            assistantMessage.usage = result.usage;
-            assistantMessage.finishReason = result.finishReason;
-        }
+        await streamCompletion(payload, {
+            onChunk: (data) => {
+                assistantMessage.content += data?.content || '';
+                assistantMessage.reasoningContent += data?.reasoningContent || '';
+                updateMessageView(assistantMessage, true);
+            },
+            onUsage: (data) => {
+                assistantMessage.usage = data;
+                updateMessageView(assistantMessage, true);
+            },
+            onDone: (data) => {
+                assistantMessage.finishReason = data?.finishReason;
+                assistantMessage.pending = false;
+                updateMessageView(assistantMessage, true);
+            },
+            onError: (data) => {
+                assistantMessage.pending = false;
+                assistantMessage.error = true;
+                assistantMessage.content = data?.message || 'Ошибка провайдера';
+                updateMessageView(assistantMessage);
+            },
+        });
     } catch (error) {
         assistantMessage.error = true;
         assistantMessage.content = error.message || String(error);
@@ -331,10 +321,6 @@ function closeSidebar() {
 }
 
 function bindSettings() {
-    dom.stream.addEventListener('change', () => {
-        state.settings.stream = dom.stream.checked;
-        persistSettings();
-    });
     dom.context.addEventListener('change', () => {
         state.settings.context = dom.context.checked;
         persistSettings();
