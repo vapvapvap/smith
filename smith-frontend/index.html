@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smith — ИИ-агент</title>
+    <meta name="description" content="Клиент Smith: генерация ответов нейросети DeepSeek">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar" id="sidebar">
+            <header class="sidebar__header">
+                <span class="brand">
+                    <span class="brand__mark">S</span>
+                    <span class="brand__name">Smith</span>
+                </span>
+                <div class="sidebar__actions">
+                    <button type="button" class="icon-btn" id="theme-toggle" title="Сменить тему" aria-label="Сменить тему">
+                        <svg class="icon icon--moon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>
+                        </svg>
+                        <svg class="icon icon--sun" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="4"/>
+                            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="icon-btn icon-btn--close" id="sidebar-close" title="Закрыть панель" aria-label="Закрыть панель">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 6l12 12M18 6 6 18"/>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="sidebar__body">
+                <button type="button" class="btn btn--ghost btn--block" id="new-chat">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Новый чат
+                </button>
+
+                <section class="field">
+                    <label class="field__label" for="model">Модель</label>
+                    <select class="input" id="model" disabled>
+                        <option value="">Загрузка…</option>
+                    </select>
+                </section>
+
+                <section class="field">
+                    <span class="field__label">Режим</span>
+                    <label class="switch">
+                        <input type="checkbox" id="stream-toggle" checked>
+                        <span class="switch__track"><span class="switch__thumb"></span></span>
+                        <span class="switch__text">Стриминг ответа</span>
+                    </label>
+                    <label class="switch">
+                        <input type="checkbox" id="context-toggle">
+                        <span class="switch__track"><span class="switch__thumb"></span></span>
+                        <span class="switch__text">Передавать контекст</span>
+                    </label>
+                </section>
+
+                <details class="params" id="params">
+                    <summary class="params__summary">
+                        <span>Параметры генерации</span>
+                        <svg class="icon icon--chevron" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </summary>
+
+                    <div class="params__grid">
+                        <label class="field field--compact">
+                            <span class="field__label">Temperature</span>
+                            <input class="input" type="number" id="temperature" min="0" max="2" step="0.1" placeholder="1.0">
+                        </label>
+                        <label class="field field--compact">
+                            <span class="field__label">Top P</span>
+                            <input class="input" type="number" id="top_p" min="0" max="1" step="0.05" placeholder="1.0">
+                        </label>
+                        <label class="field field--compact">
+                            <span class="field__label">Max tokens</span>
+                            <input class="input" type="number" id="max_tokens" min="1" step="1" placeholder="авто">
+                        </label>
+                        <label class="field field--compact">
+                            <span class="field__label">Top K <span class="hint" title="Принимается, но не передаётся в DeepSeek">i</span></span>
+                            <input class="input" type="number" id="top_k" min="0" step="1" placeholder="—">
+                        </label>
+                        <label class="field field--compact">
+                            <span class="field__label">Presence penalty <span class="hint" title="Принимается, но не передаётся в DeepSeek (deprecated)">i</span></span>
+                            <input class="input" type="number" id="presence_penalty" step="0.1" placeholder="0.0">
+                        </label>
+                        <label class="field field--compact">
+                            <span class="field__label">Frequency penalty <span class="hint" title="Принимается, но не передаётся в DeepSeek (deprecated)">i</span></span>
+                            <input class="input" type="number" id="frequency_penalty" step="0.1" placeholder="0.0">
+                        </label>
+                        <label class="field field--compact">
+                            <span class="field__label">Thinking</span>
+                            <select class="input" id="thinking">
+                                <option value="enabled">enabled</option>
+                                <option value="disabled">disabled</option>
+                            </select>
+                        </label>
+                        <label class="field field--compact">
+                            <span class="field__label">Reasoning effort</span>
+                            <select class="input" id="reasoning_effort">
+                                <option value="low">low</option>
+                                <option value="high" selected>high</option>
+                                <option value="max">max</option>
+                            </select>
+                        </label>
+                        <label class="field field--compact field--full">
+                            <span class="field__label">Stop (через запятую, до 16)</span>
+                            <input class="input" type="text" id="stop" placeholder="например: \n\n, ###">
+                        </label>
+                    </div>
+                </details>
+            </div>
+
+            <footer class="sidebar__footer">
+                <span class="status" id="status">
+                    <span class="status__dot" id="status-dot"></span>
+                    <span id="status-text">Проверка соединения…</span>
+                </span>
+            </footer>
+        </aside>
+
+        <main class="chat">
+            <header class="chat__header">
+                <button type="button" class="icon-btn icon-btn--menu" id="sidebar-open" title="Открыть панель" aria-label="Открыть панель">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+                <span class="chat__title" id="chat-title">Новый диалог</span>
+                <button type="button" class="icon-btn" id="clear-chat" title="Очистить ленту" aria-label="Очистить ленту">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="chat__messages" id="messages">
+                <div class="empty-state" id="empty-state">
+                    <span class="empty-state__mark">S</span>
+                    <h1 class="empty-state__title">Чем помочь?</h1>
+                    <p class="empty-state__text">Задайте вопрос — Smith ответит через DeepSeek. Настройте модель и параметры в панели слева.</p>
+                </div>
+                <div class="messages-list" id="messages-list"></div>
+            </div>
+
+            <form class="composer" id="composer">
+                <div class="composer__box">
+                    <textarea class="composer__input" id="prompt" rows="1" placeholder="Напишите сообщение…" autocomplete="off"></textarea>
+                    <button type="submit" class="composer__send" id="send" title="Отправить" aria-label="Отправить">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 12l16-8-6 8 6 8-16-8Z"/>
+                        </svg>
+                    </button>
+                </div>
+                <p class="composer__hint">Enter — отправить, Shift+Enter — новая строка</p>
+            </form>
+        </main>
+
+        <div class="backdrop" id="backdrop"></div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

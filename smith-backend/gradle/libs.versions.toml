@@ -1,0 +1,27 @@
+[versions]
+spring-boot = "4.1.1"
+mybatis = "4.1.0"
+springdoc = "3.1.1"
+swagger = "2.2.55"
+jakarta-validation = "3.1.1"
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+
+[libraries]
+spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
+spring-boot-webmvc-starter = { module = "org.springframework.boot:spring-boot-starter-webmvc" }
+spring-boot-validation-starter = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-jdbc-starter = { module = "org.springframework.boot:spring-boot-starter-jdbc" }
+spring-boot-test-starter = { module = "org.springframework.boot:spring-boot-starter-test" }
+mybatis-starter = { module = "org.mybatis.spring.boot:mybatis-spring-boot-starter", version.ref = "mybatis" }
+springdoc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+flyway-core = { module = "org.flywaydb:flyway-core" }
+flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
+spring-boot-flyway = { module = "org.springframework.boot:spring-boot-flyway" }
+postgresql = { module = "org.postgresql:postgresql" }
+httpclient5 = { module = "org.apache.httpcomponents.client5:httpclient5" }
+swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations-jakarta", version.ref = "swagger" }
+jakarta-validation = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }

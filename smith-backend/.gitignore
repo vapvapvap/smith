@@ -1,0 +1,26 @@
+# Локальные секреты и файлы окружения
+application-local.yml
+application-local.properties
+*.local.yml
+*.local.properties
+.env
+.env.*
+!.env.example
+
+# Сборка
+.gradle/
+build/
+*/build/
+out/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# ОС
+.DS_Store
+Thumbs.db

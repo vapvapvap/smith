@@ -1,0 +1,26 @@
+# Секреты и локальные конфиги
+**/application-local.yml
+**/application-local.properties
+**/*.local.yml
+**/*.local.properties
+.env
+.env.*
+!.env.example
+
+# Сборка
+**/build/
+**/.gradle/
+**/node_modules/
+**/dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# ОС
+.DS_Store
+Thumbs.db
