@@ -6,6 +6,7 @@ import java.util.UUID;
 public record ChatRecord(
         UUID id,
         Prompt prompt,
+        String systemPrompt,
         ModelName model,
         String content,
         String reasoningContent,
@@ -23,6 +24,7 @@ public record ChatRecord(
         return new ChatRecord(
                 request.id(),
                 request.prompt(),
+                request.systemPrompt(),
                 completion.model(),
                 completion.content(),
                 completion.reasoningContent(),
@@ -38,6 +40,7 @@ public record ChatRecord(
         return new ChatRecord(
                 request.id(),
                 request.prompt(),
+                request.systemPrompt(),
                 request.model(),
                 null,
                 null,

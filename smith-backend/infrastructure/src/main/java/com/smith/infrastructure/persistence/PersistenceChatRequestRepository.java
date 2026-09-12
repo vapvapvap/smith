@@ -34,6 +34,7 @@ public class PersistenceChatRequestRepository implements ChatRequestRepository {
         ChatRecordPo po = new ChatRecordPo();
         po.setId(r.id().toString());
         po.setPrompt(r.prompt().value());
+        po.setSystemPrompt(r.systemPrompt());
         po.setModel(r.model().value());
         po.setContent(r.content());
         po.setReasoningContent(r.reasoningContent());
@@ -54,6 +55,7 @@ public class PersistenceChatRequestRepository implements ChatRequestRepository {
         return new ChatRecord(
                 UUID.fromString(po.getId()),
                 new Prompt(po.getPrompt()),
+                po.getSystemPrompt(),
                 new ModelName(po.getModel()),
                 po.getContent(),
                 po.getReasoningContent(),

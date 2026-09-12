@@ -39,6 +39,8 @@ Flyway 12.4.0, PostgreSQL 17, Apache HttpClient5 5.6.4, springdoc-openapi 3.1.1.
 - Модели — enum `LlmModel` с алиасами (`DEEPSEEK_V4_PRO` и т.д.) и `ModelRegistry`
   для маппинга на имена провайдера.
 - Порт `LlmProvider` (`complete`/`stream`) абстрагирует вызов LLM.
+- Необязательный `system_prompt` подставляется провайдером как сообщение
+  `role=system` перед пользовательским `role=user`; хранится в `chat_request.system_prompt`.
 - `top_k`, `presence_penalty`, `frequency_penalty` принимаются в DTO, но НЕ
   передаются в DeepSeek (не поддерживаются).
 - Режимы ответа: `stream=false` -> JSON, `stream=true` -> SSE (`SseEmitter`).

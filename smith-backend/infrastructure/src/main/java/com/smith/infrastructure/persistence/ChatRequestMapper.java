@@ -10,18 +10,18 @@ public interface ChatRequestMapper {
 
     @Insert("""
             INSERT INTO chat_request
-              (id, prompt, model, content, reasoning_content, finish_reason,
+              (id, prompt, system_prompt, model, content, reasoning_content, finish_reason,
                prompt_tokens, completion_tokens, total_tokens,
                streamed, status, error_message, created_at)
             VALUES
-              (CAST(#{id} AS uuid), #{prompt}, #{model}, #{content}, #{reasoningContent}, #{finishReason},
+              (CAST(#{id} AS uuid), #{prompt}, #{systemPrompt}, #{model}, #{content}, #{reasoningContent}, #{finishReason},
                #{promptTokens}, #{completionTokens}, #{totalTokens},
                #{streamed}, #{status}, #{errorMessage}, #{createdAt})
             """)
     void insert(ChatRecordPo po);
 
     @Select("""
-            SELECT id, prompt, model, content, reasoning_content, finish_reason,
+            SELECT id, prompt, system_prompt, model, content, reasoning_content, finish_reason,
                    prompt_tokens, completion_tokens, total_tokens,
                    streamed, status, error_message, created_at
             FROM chat_request

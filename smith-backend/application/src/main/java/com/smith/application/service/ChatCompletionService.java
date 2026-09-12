@@ -120,7 +120,8 @@ public class ChatCompletionService {
                 new Prompt(request.getPrompt()),
                 ModelName.of(model),
                 params,
-                stream);
+                stream,
+                request.getSystemPrompt());
     }
 
     private com.smith.domain.model.ThinkingMode mapThinking(Thinking thinking) {

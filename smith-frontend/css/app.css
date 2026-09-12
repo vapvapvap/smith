@@ -1,6 +1,6 @@
 .app {
     display: grid;
-    grid-template-columns: 300px minmax(0, 1fr);
+    grid-template-columns: 400px minmax(0, 1fr);
     height: 100dvh;
     overflow: hidden;
 }
@@ -134,14 +134,31 @@
 }
 
 .field__label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     font-size: 12px;
     font-weight: 500;
     color: var(--text-muted);
     letter-spacing: 0.01em;
 }
 
+.field__label .hint {
+    flex: none;
+}
+
 .field--full {
     grid-column: 1 / -1;
+}
+
+.field--grow {
+    flex: 1 1 auto;
+}
+
+.field--grow .input--area {
+    flex: 1 1 auto;
+    min-height: 200px;
+    max-height: none;
 }
 
 .input {
@@ -163,6 +180,14 @@
     outline: none;
     border-color: var(--text);
     background: var(--surface);
+}
+
+.input--area {
+    resize: none;
+    min-height: 36px;
+    max-height: 200px;
+    overflow-y: auto;
+    line-height: 1.5;
 }
 
 select.input {
@@ -743,7 +768,7 @@ select.input {
         top: 0;
         bottom: 0;
         left: 0;
-        width: 300px;
+        width: 400px;
         max-width: 86vw;
         z-index: 50;
         transform: translateX(-100%);

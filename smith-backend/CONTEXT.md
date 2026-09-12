@@ -134,6 +134,16 @@ Apache HttpClient5 5.6.4 (httpcore5 5.4.3).
   (application, Mockito), `ChatControllerTest` (standalone MockMvc: sync JSON,
   ошибки 400, SSE-поток), `SseStreamListenerTest` (протокол SSE-событий).
 
+### Системный промпт (2026-09-12)
+- `ChatCompletionRequest.system_prompt` (необязательный) -> `ChatRequest.systemPrompt`.
+- `DeepSeekLlmProvider` при непустом значении добавляет `{role:system}` перед
+  `{role:user}` в `messages`.
+- Flyway `V2__add_system_prompt.sql`: `chat_request.system_prompt TEXT`;
+  обновлены `ChatRecordPo`, `ChatRequestMapper`, `PersistenceChatRequestRepository`.
+- `ChatControllerTest.streamStartsSseAndEmitsEvents` был флейки (гонка с
+  виртуальным потоком): добавлено `mvcResult.getAsyncResult(10_000L)` перед
+  `asyncDispatch`.
+
 ### Проверка e2e (локально, профиль `local`)
 - `GET /api/v1/models` — 3 модели (алиас + имя провайдера).
 - `POST /chat/completions` — реальный ответ DeepSeek (DEEPSEEK_V4_FLASH),

@@ -6,6 +6,7 @@ public class ChatRecordPo {
 
     private String id;
     private String prompt;
+    private String systemPrompt;
     private String model;
     private String content;
     private String reasoningContent;
@@ -32,6 +33,14 @@ public class ChatRecordPo {
 
     public void setPrompt(String prompt) {
         this.prompt = prompt;
+    }
+
+    public String getSystemPrompt() {
+        return systemPrompt;
+    }
+
+    public void setSystemPrompt(String systemPrompt) {
+        this.systemPrompt = systemPrompt;
     }
 
     public String getModel() {

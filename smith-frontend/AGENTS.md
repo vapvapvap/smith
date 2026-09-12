@@ -56,7 +56,12 @@ smith-frontend/
 - События SSE: `chunk` (`{content, reasoningContent}`), `usage`, `done`
   (`{finishReason}`), `error` (`{message}`).
 - Ключи тела запроса — snake_case там, где так у бэкенда: `top_p`, `top_k`,
-  `max_tokens`, `presence_penalty`, `frequency_penalty`, `reasoning_effort`.
+  `max_tokens`, `presence_penalty`, `frequency_penalty`, `reasoning_effort`,
+  `system_prompt`.
+- Системный промпт — поле под «Параметрами генерации» (`#system-prompt`),
+  хранится в `state.settings.systemPrompt`; при непустом значении уходит как
+  `system_prompt`. Поле растягивается до низа сайдбара (не менее 200px), Enter
+  переносит строку.
 - У бэкенда **нет многоходового диалога** (принимает один `prompt`). Контекст
   собирается на клиенте (переключатель «Передавать контекст»), лимит —
   `CONTEXT_CHAR_LIMIT`.

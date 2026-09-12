@@ -10,11 +10,10 @@ export const defaultSettings = {
     top_p: '',
     max_tokens: '',
     top_k: '',
-    presence_penalty: '',
-    frequency_penalty: '',
     thinking: 'enabled',
     reasoning_effort: 'high',
     stop: '',
+    systemPrompt: '',
 };
 
 export const state = {

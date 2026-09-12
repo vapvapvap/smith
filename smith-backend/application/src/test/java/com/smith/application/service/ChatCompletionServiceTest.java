@@ -48,6 +48,7 @@ class ChatCompletionServiceTest {
         ChatCompletionRequest request = new ChatCompletionRequest();
         request.setPrompt("Hello");
         request.setModel("DEEPSEEK_V4_FLASH");
+        request.setSystemPrompt("Ты — полезный ассистент");
 
         ChatCompletionResponse response = service.complete(request);
 
@@ -64,6 +65,7 @@ class ChatCompletionServiceTest {
         ChatRequest built = captor.getValue();
         assertThat(built.model().value()).isEqualTo("deepseek-v4-flash");
         assertThat(built.prompt().value()).isEqualTo("Hello");
+        assertThat(built.systemPrompt()).isEqualTo("Ты — полезный ассистент");
         assertThat(built.params().temperature()).isEqualTo(1.0);
         assertThat(built.params().topP()).isEqualTo(1.0);
         assertThat(built.params().presencePenalty()).isEqualTo(0.0);

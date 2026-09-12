@@ -8,9 +8,11 @@ public record ChatRequest(
         Prompt prompt,
         ModelName model,
         GenerationParams params,
-        boolean stream) {
+        boolean stream,
+        String systemPrompt) {
 
-    public static ChatRequest of(Prompt prompt, ModelName model, GenerationParams params, boolean stream) {
-        return new ChatRequest(UUID.randomUUID(), prompt, model, params, stream);
+    public static ChatRequest of(Prompt prompt, ModelName model, GenerationParams params, boolean stream,
+                                 String systemPrompt) {
+        return new ChatRequest(UUID.randomUUID(), prompt, model, params, stream, systemPrompt);
     }
 }

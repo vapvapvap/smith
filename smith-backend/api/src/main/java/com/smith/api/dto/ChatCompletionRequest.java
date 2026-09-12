@@ -15,6 +15,10 @@ public class ChatCompletionRequest {
     @NotBlank(message = "prompt is required")
     private String prompt;
 
+    @JsonProperty("system_prompt")
+    @Schema(description = "Системный промпт (role=system), необязательный")
+    private String systemPrompt;
+
     @Schema(description = "Алиас модели", example = "DEEPSEEK_V4_PRO", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "model is required")
     private String model;
@@ -63,6 +67,14 @@ public class ChatCompletionRequest {
 
     public void setPrompt(String prompt) {
         this.prompt = prompt;
+    }
+
+    public String getSystemPrompt() {
+        return systemPrompt;
+    }
+
+    public void setSystemPrompt(String systemPrompt) {
+        this.systemPrompt = systemPrompt;
     }
 
     public String getModel() {

@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DeepSeekLlmProvider implements LlmProvider {
@@ -140,7 +141,7 @@ public class DeepSeekLlmProvider implements LlmProvider {
     private DeepSeekCompletionRequest buildRequest(ChatRequest request, boolean stream) {
         DeepSeekCompletionRequest body = new DeepSeekCompletionRequest();
         body.setModel(request.model().value());
-        body.setMessages(List.of(new DeepSeekCompletionRequest.Message("user", request.prompt().value())));
+        body.setMessages(buildMessages(request));
         GenerationParams params = request.params();
         body.setTemperature(params.temperature());
         body.setTopP(params.topP());
@@ -155,6 +156,16 @@ public class DeepSeekLlmProvider implements LlmProvider {
         body.setThinking(new DeepSeekCompletionRequest.Thinking(
                 thinking == ThinkingMode.ENABLED ? "enabled" : "disabled", effort.name().toLowerCase()));
         return body;
+    }
+
+    private List<DeepSeekCompletionRequest.Message> buildMessages(ChatRequest request) {
+        List<DeepSeekCompletionRequest.Message> messages = new ArrayList<>();
+        String systemPrompt = request.systemPrompt();
+        if (systemPrompt != null && !systemPrompt.isBlank()) {
+            messages.add(new DeepSeekCompletionRequest.Message("system", systemPrompt));
+        }
+        messages.add(new DeepSeekCompletionRequest.Message("user", request.prompt().value()));
+        return messages;
     }
 
     private ChatCompletion mapCompletion(ChatRequest request, DeepSeekCompletionResponse body) {

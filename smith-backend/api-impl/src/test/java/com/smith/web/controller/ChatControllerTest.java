@@ -130,6 +130,7 @@ class ChatControllerTest {
                 .andExpect(request().asyncStarted())
                 .andReturn();
 
+        mvcResult.getAsyncResult(10_000L);
         String body = mvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))

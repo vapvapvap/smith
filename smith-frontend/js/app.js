@@ -24,6 +24,7 @@ const dom = {
     emptyState: el('empty-state'),
     composer: el('composer'),
     prompt: el('prompt'),
+    systemPrompt: el('system-prompt'),
     send: el('send'),
     themeToggle: el('theme-toggle'),
     sidebar: el('sidebar'),
@@ -41,8 +42,6 @@ const numberFields = [
     'top_p',
     'max_tokens',
     'top_k',
-    'presence_penalty',
-    'frequency_penalty',
 ];
 
 const views = new Map();
@@ -121,6 +120,7 @@ function applySettingsToInputs() {
     el('thinking').value = s.thinking;
     el('reasoning_effort').value = s.reasoning_effort;
     el('stop').value = s.stop;
+    dom.systemPrompt.value = s.systemPrompt ?? '';
     for (const key of numberFields) {
         el(key).value = s[key] ?? '';
     }
@@ -210,6 +210,10 @@ function buildPayload(prompt) {
     if (stop.length > 0) {
         payload.stop = stop;
     }
+    const systemPrompt = (s.systemPrompt || '').trim();
+    if (systemPrompt) {
+        payload.system_prompt = systemPrompt;
+    }
     return payload;
 }
 
@@ -294,9 +298,13 @@ async function send() {
     }
 }
 
+function autoResizeField(field, maxHeight) {
+    field.style.height = 'auto';
+    field.style.height = `${Math.min(field.scrollHeight, maxHeight)}px`;
+}
+
 function autoResize() {
-    dom.prompt.style.height = 'auto';
-    dom.prompt.style.height = `${Math.min(dom.prompt.scrollHeight, 200)}px`;
+    autoResizeField(dom.prompt, 200);
 }
 
 function openSidebar() {
@@ -330,6 +338,11 @@ function bindSettings() {
             persistSettings();
         });
     }
+
+    dom.systemPrompt.addEventListener('input', () => {
+        state.settings.systemPrompt = dom.systemPrompt.value;
+        persistSettings();
+    });
 }
 
 function bindEvents() {
