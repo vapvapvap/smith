@@ -2,6 +2,8 @@ package com.smith.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -27,7 +29,9 @@ public class ChatCompletionRequest {
     private Double temperature;
 
     @JsonProperty("top_p")
-    @Schema(description = "Nucleus sampling", example = "1.0", defaultValue = "1.0")
+    @Schema(description = "Nucleus sampling, диапазон (0, 1.0]", example = "1.0", defaultValue = "1.0")
+    @DecimalMin(value = "0.0", inclusive = false, message = "top_p must be greater than 0")
+    @DecimalMax(value = "1.0", message = "top_p must be at most 1.0")
     private Double topP;
 
     @JsonProperty("top_k")

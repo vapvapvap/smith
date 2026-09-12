@@ -1,4 +1,4 @@
-import { fetchModels, complete, streamCompletion } from './api.js';
+import { fetchModels, complete, streamCompletion, me, logout } from './api.js';
 import { CONTEXT_CHAR_LIMIT } from './config.js';
 import { MessageView } from './render.js';
 import {
@@ -35,6 +35,8 @@ const dom = {
     statusText: el('status-text'),
     toast: el('toast'),
     chatTitle: el('chat-title'),
+    user: el('current-user'),
+    logout: el('logout'),
 };
 
 const numberFields = [
@@ -199,12 +201,17 @@ function buildPayload(prompt) {
     };
     for (const key of numberFields) {
         const raw = s[key];
-        if (raw !== '' && raw != null) {
-            const value = Number(raw);
-            if (!Number.isNaN(value)) {
-                payload[key] = value;
-            }
+        if (raw === '' || raw == null) {
+            continue;
         }
+        const value = Number(raw);
+        if (Number.isNaN(value)) {
+            continue;
+        }
+        if (key === 'top_p' && value <= 0) {
+            continue;
+        }
+        payload[key] = value;
     }
     const stop = parseStop(s.stop);
     if (stop.length > 0) {
@@ -230,6 +237,12 @@ async function send() {
     }
     if (!state.settings.model) {
         showToast('Выберите модель', true);
+        return;
+    }
+
+    const topP = Number(state.settings.top_p);
+    if (state.settings.top_p !== '' && !Number.isNaN(topP) && topP <= 0) {
+        showToast('Top P должен быть больше 0', true);
         return;
     }
 
@@ -378,9 +391,29 @@ function bindEvents() {
     dom.sidebarOpen.addEventListener('click', openSidebar);
     dom.sidebarClose.addEventListener('click', closeSidebar);
     dom.backdrop.addEventListener('click', closeSidebar);
+
+    dom.logout.addEventListener('click', async () => {
+        await logout();
+        window.location.replace('login.html');
+    });
 }
 
-function init() {
+async function requireSession() {
+    try {
+        const user = await me();
+        if (!user) {
+            window.location.replace('login.html');
+            return null;
+        }
+        dom.user.textContent = user.username;
+        return user;
+    } catch {
+        window.location.replace('login.html');
+        return null;
+    }
+}
+
+async function init() {
     loadState();
     applyTheme();
     applySettingsToInputs();
@@ -388,6 +421,12 @@ function init() {
     bindEvents();
     renderMessages();
     autoResize();
+
+    const user = await requireSession();
+    if (!user) {
+        return;
+    }
+
     loadModels();
     dom.prompt.focus();
 }

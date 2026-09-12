@@ -77,8 +77,8 @@
                             <input class="input" type="number" id="temperature" min="0" max="2" step="0.1" placeholder="1.0">
                         </label>
                         <label class="field field--compact">
-                            <span class="field__label">Top P <span class="hint" title="Nucleus sampling: учитываются токены с суммарной вероятностью до top_p.">i</span></span>
-                            <input class="input" type="number" id="top_p" min="0" max="1" step="0.05" placeholder="1.0">
+                            <span class="field__label">Top P <span class="hint" title="Nucleus sampling: учитываются токены с суммарной вероятностью до top_p. Диапазон (0, 1].">i</span></span>
+                            <input class="input" type="number" id="top_p" min="0.01" max="1" step="0.01" placeholder="1.0">
                         </label>
                         <label class="field field--compact">
                             <span class="field__label">Max tokens <span class="hint" title="Максимальное число токенов в генерируемом ответе.">i</span></span>
@@ -121,6 +121,10 @@
                     <span class="status__dot" id="status-dot"></span>
                     <span id="status-text">Проверка соединения…</span>
                 </span>
+                <div class="sidebar__user">
+                    <span class="sidebar__user-name" id="current-user"></span>
+                    <button type="button" class="btn btn--ghost btn--small" id="logout">Выйти</button>
+                </div>
             </footer>
         </aside>
 

@@ -1,9 +1,17 @@
-const DEFAULT_BASE_URL = 'http://localhost:8080';
+const DEFAULT_BACKEND_PORT = 8080;
+
+function defaultBaseUrl() {
+    const { protocol, hostname } = window.location;
+    if ((protocol === 'http:' || protocol === 'https:') && hostname) {
+        return `${protocol}//${hostname}:${DEFAULT_BACKEND_PORT}`;
+    }
+    return `http://localhost:${DEFAULT_BACKEND_PORT}`;
+}
 
 function resolveBaseUrl() {
     const override = window.SMITH_API_BASE_URL
         || localStorage.getItem('smith.baseUrl')
-        || DEFAULT_BASE_URL;
+        || defaultBaseUrl();
     return String(override).replace(/\/+$/, '');
 }
 
@@ -14,6 +22,10 @@ export const API = {
 
 export function apiUrl(path) {
     return `${API.baseUrl}${API.prefix}${path}`;
+}
+
+export function authUrl(path) {
+    return `${API.baseUrl}/api/auth${path}`;
 }
 
 export const CONTEXT_CHAR_LIMIT = 12000;

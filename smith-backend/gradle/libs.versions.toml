@@ -11,6 +11,7 @@ spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 [libraries]
 spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
 spring-boot-webmvc-starter = { module = "org.springframework.boot:spring-boot-starter-webmvc" }
+spring-boot-security-starter = { module = "org.springframework.boot:spring-boot-starter-security" }
 spring-boot-validation-starter = { module = "org.springframework.boot:spring-boot-starter-validation" }
 spring-boot-jdbc-starter = { module = "org.springframework.boot:spring-boot-starter-jdbc" }
 spring-boot-test-starter = { module = "org.springframework.boot:spring-boot-starter-test" }

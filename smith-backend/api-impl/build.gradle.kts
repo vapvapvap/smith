@@ -8,6 +8,7 @@ dependencies {
     implementation(project(":infrastructure"))
     implementation(libs.spring.boot.webmvc.starter)
     implementation(libs.spring.boot.validation.starter)
+    implementation(libs.spring.boot.security.starter)
     implementation(libs.mybatis.starter)
     implementation(libs.flyway.core)
     implementation(libs.flyway.postgresql)

@@ -1,4 +1,10 @@
-import { apiUrl } from './config.js';
+import { apiUrl, authUrl } from './config.js';
+
+function redirectToLogin() {
+    if (!window.location.pathname.endsWith('login.html')) {
+        window.location.replace('login.html');
+    }
+}
 
 async function toError(response) {
     let message = `HTTP ${response.status}`;
@@ -17,8 +23,51 @@ async function toError(response) {
     return error;
 }
 
+function ensureAuthorized(response) {
+    if (response.status === 401) {
+        redirectToLogin();
+        throw new Error('Требуется авторизация');
+    }
+}
+
+export async function login(username, password) {
+    const response = await fetch(authUrl('/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ username, password }),
+        credentials: 'include',
+    });
+    if (!response.ok) {
+        throw await toError(response);
+    }
+    return response.json();
+}
+
+export async function logout() {
+    try {
+        await fetch(authUrl('/logout'), {
+            method: 'POST',
+            credentials: 'include',
+        });
+    } catch {
+        /* ignore network errors on logout */
+    }
+}
+
+export async function me() {
+    const response = await fetch(authUrl('/me'), { credentials: 'include' });
+    if (response.status === 401) {
+        return null;
+    }
+    if (!response.ok) {
+        throw await toError(response);
+    }
+    return response.json();
+}
+
 export async function fetchModels() {
-    const response = await fetch(apiUrl('/models'));
+    const response = await fetch(apiUrl('/models'), { credentials: 'include' });
+    ensureAuthorized(response);
     if (!response.ok) {
         throw await toError(response);
     }
@@ -30,7 +79,9 @@ export async function complete(payload) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        credentials: 'include',
     });
+    ensureAuthorized(response);
     if (!response.ok) {
         throw await toError(response);
     }
@@ -97,7 +148,9 @@ export async function streamCompletion(payload, handlers, signal) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
         signal,
+        credentials: 'include',
     });
+    ensureAuthorized(response);
     if (!response.ok) {
         throw await toError(response);
     }

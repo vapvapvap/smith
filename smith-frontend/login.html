@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smith — Вход</title>
+    <meta name="description" content="Авторизация в клиенте Smith">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body class="auth">
+    <main class="auth__card">
+        <span class="auth__brand">S</span>
+        <h1 class="auth__title">Вход в Smith</h1>
+        <p class="auth__subtitle">Введите логин и пароль, чтобы продолжить.</p>
+
+        <form class="auth__form" id="login-form" novalidate>
+            <label class="field">
+                <span class="field__label">Логин</span>
+                <input class="input" type="text" id="username" name="username"
+                       autocomplete="username" autocapitalize="off" autocorrect="off" required autofocus>
+            </label>
+
+            <label class="field">
+                <span class="field__label">Пароль</span>
+                <input class="input" type="password" id="password" name="password"
+                       autocomplete="current-password" required>
+            </label>
+
+            <p class="auth__error" id="login-error" role="alert" hidden></p>
+
+            <button class="btn btn--primary btn--block" type="submit" id="login-submit">Войти</button>
+        </form>
+    </main>
+
+    <script type="module" src="js/login.js"></script>
+</body>
+</html>
