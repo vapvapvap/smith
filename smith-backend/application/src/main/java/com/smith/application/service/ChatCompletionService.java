@@ -1,5 +1,6 @@
 package com.smith.application.service;
 
+import com.smith.api.dto.AttachmentDto;
 import com.smith.api.dto.ChatCompletionRequest;
 import com.smith.api.dto.ChatCompletionResponse;
 import com.smith.api.dto.ReasoningEffort;
@@ -7,6 +8,8 @@ import com.smith.api.dto.Thinking;
 import com.smith.api.dto.UsageDto;
 import com.smith.domain.exception.LlmProviderException;
 import com.smith.domain.exception.UnknownModelException;
+import com.smith.domain.exception.UnsupportedAttachmentException;
+import com.smith.domain.model.Attachment;
 import com.smith.domain.model.ChatCompletion;
 import com.smith.domain.model.ChatRecord;
 import com.smith.domain.model.ChatRequest;
@@ -22,6 +25,7 @@ import com.smith.domain.port.LlmProvider;
 import com.smith.domain.port.ModelRegistry;
 
 import java.time.Instant;
+import java.util.List;
 
 public class ChatCompletionService {
 
@@ -105,6 +109,11 @@ public class ChatCompletionService {
 
     private ChatRequest buildChatRequest(ChatCompletionRequest request) {
         LlmModel model = modelRegistry.resolve(request.getModel());
+        List<Attachment> attachments = mapAttachments(request.getAttachments());
+        if (!attachments.isEmpty() && !model.supportsVision()) {
+            throw new UnsupportedAttachmentException(
+                    "Model " + model.name() + " does not support image attachments");
+        }
         boolean stream = request.getStream() != null ? request.getStream() : DEFAULT_STREAM;
         GenerationParams params = new GenerationParams(
                 request.getTemperature() != null ? request.getTemperature() : DEFAULT_TEMPERATURE,
@@ -121,7 +130,25 @@ public class ChatCompletionService {
                 ModelName.of(model),
                 params,
                 stream,
-                request.getSystemPrompt());
+                request.getSystemPrompt(),
+                attachments);
+    }
+
+    private List<Attachment> mapAttachments(List<AttachmentDto> dtos) {
+        if (dtos == null || dtos.isEmpty()) {
+            return List.of();
+        }
+        return dtos.stream().map(dto -> {
+            String mimeType = dto.getMimeType();
+            if (mimeType == null || !mimeType.startsWith("image/")) {
+                throw new UnsupportedAttachmentException(
+                        "Only image attachments are supported, got: " + mimeType);
+            }
+            if (dto.getData() == null || dto.getData().isBlank()) {
+                throw new UnsupportedAttachmentException("Attachment data must not be blank");
+            }
+            return new Attachment(dto.getName(), mimeType, dto.getData());
+        }).toList();
     }
 
     private com.smith.domain.model.ThinkingMode mapThinking(Thinking thinking) {

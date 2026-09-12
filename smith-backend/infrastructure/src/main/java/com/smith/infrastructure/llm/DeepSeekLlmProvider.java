@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.smith.domain.exception.LlmProviderException;
+import com.smith.domain.model.Attachment;
 import com.smith.domain.model.ChatCompletion;
 import com.smith.domain.model.ChatRequest;
 import com.smith.domain.model.FinishReason;
@@ -164,7 +165,20 @@ public class DeepSeekLlmProvider implements LlmProvider {
         if (systemPrompt != null && !systemPrompt.isBlank()) {
             messages.add(new DeepSeekCompletionRequest.Message("system", systemPrompt));
         }
-        messages.add(new DeepSeekCompletionRequest.Message("user", request.prompt().value()));
+        List<Attachment> images = request.attachments().stream()
+                .filter(Attachment::isImage)
+                .toList();
+        if (images.isEmpty()) {
+            messages.add(new DeepSeekCompletionRequest.Message("user", request.prompt().value()));
+            return messages;
+        }
+        List<DeepSeekCompletionRequest.ContentPart> parts = new ArrayList<>();
+        parts.add(new DeepSeekCompletionRequest.ContentPart("text", request.prompt().value(), null));
+        for (Attachment image : images) {
+            parts.add(new DeepSeekCompletionRequest.ContentPart("image_url", null,
+                    new DeepSeekCompletionRequest.ImageUrl(image.dataUri())));
+        }
+        messages.add(new DeepSeekCompletionRequest.Message("user", parts));
         return messages;
     }
 

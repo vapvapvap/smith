@@ -1,7 +1,9 @@
 package com.smith.application.service;
 
+import com.smith.api.dto.AttachmentDto;
 import com.smith.api.dto.ChatCompletionRequest;
 import com.smith.api.dto.ChatCompletionResponse;
+import com.smith.domain.exception.UnsupportedAttachmentException;
 import com.smith.domain.model.ChatCompletion;
 import com.smith.domain.model.ChatRecord;
 import com.smith.domain.model.ChatRequest;
@@ -19,8 +21,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -89,5 +93,60 @@ class ChatCompletionServiceTest {
         verify(repository).save(captor.capture());
         assertThat(captor.getValue().status()).isEqualTo(ChatStatus.COMPLETED);
         assertThat(captor.getValue().content()).isEqualTo("c");
+    }
+
+    @Test
+    void mapsImageAttachmentsForVisionModel() {
+        when(provider.complete(any(ChatRequest.class))).thenReturn(new ChatCompletion(
+                "resp-1", ModelName.of(LlmModel.DEEPSEEK_V4_FLASH_VISION_EXP), "c", null,
+                FinishReason.STOP, new Usage(1, 2, 3), Instant.now()));
+
+        ChatCompletionRequest request = new ChatCompletionRequest();
+        request.setPrompt("Что на картинке?");
+        request.setModel("DEEPSEEK_V4_FLASH_VISION_EXP");
+        AttachmentDto attachment = new AttachmentDto();
+        attachment.setName("photo.png");
+        attachment.setMimeType("image/png");
+        attachment.setData("aGVsbG8=");
+        request.setAttachments(List.of(attachment));
+
+        service.complete(request);
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(provider).complete(captor.capture());
+        ChatRequest built = captor.getValue();
+        assertThat(built.attachments()).hasSize(1);
+        assertThat(built.attachments().get(0).mimeType()).isEqualTo("image/png");
+        assertThat(built.attachments().get(0).dataUri()).isEqualTo("data:image/png;base64,aGVsbG8=");
+    }
+
+    @Test
+    void rejectsImageAttachmentForNonVisionModel() {
+        ChatCompletionRequest request = new ChatCompletionRequest();
+        request.setPrompt("Что на картинке?");
+        request.setModel("DEEPSEEK_V4_FLASH");
+        AttachmentDto attachment = new AttachmentDto();
+        attachment.setName("photo.png");
+        attachment.setMimeType("image/png");
+        attachment.setData("aGVsbG8=");
+        request.setAttachments(List.of(attachment));
+
+        assertThatThrownBy(() -> service.complete(request))
+                .isInstanceOf(UnsupportedAttachmentException.class);
+    }
+
+    @Test
+    void rejectsNonImageAttachment() {
+        ChatCompletionRequest request = new ChatCompletionRequest();
+        request.setPrompt("Прочитай файл");
+        request.setModel("DEEPSEEK_V4_FLASH_VISION_EXP");
+        AttachmentDto attachment = new AttachmentDto();
+        attachment.setName("notes.txt");
+        attachment.setMimeType("text/plain");
+        attachment.setData("aGVsbG8=");
+        request.setAttachments(List.of(attachment));
+
+        assertThatThrownBy(() -> service.complete(request))
+                .isInstanceOf(UnsupportedAttachmentException.class);
     }
 }

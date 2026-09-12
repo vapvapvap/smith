@@ -520,6 +520,54 @@ select.input {
     color: var(--text-faint);
 }
 
+.msg__attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.msg__attachments[hidden] {
+    display: none;
+}
+
+.msg--user .msg__attachments {
+    justify-content: flex-end;
+}
+
+.msg__attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 240px;
+    padding: 4px 9px 4px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.msg--user .msg__attachment {
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.msg__attachment-badge {
+    flex: none;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text-faint);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.msg__attachment-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .reasoning {
     margin-bottom: 8px;
     border: 1px dashed var(--border-strong);
@@ -677,6 +725,113 @@ select.input {
     color: var(--text-faint);
 }
 
+.composer__attach {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    transition: background 0.15s ease, color 0.15s ease;
+    flex: none;
+}
+
+.composer__attach:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.composer__attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    max-width: 780px;
+    margin: 0 auto 8px;
+}
+
+.composer__attachments[hidden] {
+    display: none;
+}
+
+.attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 240px;
+    padding: 5px 6px 5px 5px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+}
+
+.attachment__thumb {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex: none;
+}
+
+.attachment__badge {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 700;
+    flex: none;
+}
+
+.attachment__meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+}
+
+.attachment__name {
+    font-size: 12px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment__size {
+    font-size: 10px;
+    color: var(--text-faint);
+}
+
+.attachment__remove {
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-faint);
+    font-size: 15px;
+    line-height: 1;
+    flex: none;
+}
+
+.attachment__remove:hover {
+    background: var(--surface-2);
+    color: var(--danger);
+}
+
+.composer--dragover .composer__box {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
 .composer__send {
     display: grid;
     place-items: center;
@@ -753,6 +908,43 @@ select.input {
 
 .backdrop--visible {
     display: block;
+}
+
+/* ---------- Drop overlay ---------- */
+
+.drop-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(3px);
+    place-items: center;
+    pointer-events: none;
+}
+
+.drop-overlay--visible {
+    display: grid;
+}
+
+.drop-overlay__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 32px 40px;
+    border: 2px dashed var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 14px;
+    box-shadow: var(--shadow);
+}
+
+.drop-overlay__icon {
+    width: 28px;
+    height: 28px;
+    color: var(--text-muted);
 }
 
 /* ---------- Responsive ---------- */

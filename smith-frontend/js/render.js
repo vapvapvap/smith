@@ -52,13 +52,16 @@ export class MessageView {
         this.reasoningBody.className = 'reasoning__body';
         this.reasoning.append(summary, this.reasoningBody);
 
+        this.attachments = document.createElement('div');
+        this.attachments.className = 'msg__attachments';
+
         this.bubble = document.createElement('div');
         this.bubble.className = 'msg__bubble';
 
         this.meta = document.createElement('div');
         this.meta.className = 'msg__meta';
 
-        this.content.append(this.reasoning, this.bubble, this.meta);
+        this.content.append(this.reasoning, this.attachments, this.bubble, this.meta);
         this.el.append(avatar, this.content);
 
         this.update(message);
@@ -74,6 +77,22 @@ export class MessageView {
             this.reasoningBody.textContent = message.reasoningContent;
         } else {
             this.reasoning.hidden = true;
+        }
+
+        const files = message.attachments || [];
+        this.attachments.replaceChildren();
+        this.attachments.hidden = files.length === 0;
+        for (const file of files) {
+            const chip = document.createElement('span');
+            chip.className = 'msg__attachment';
+            const badge = document.createElement('span');
+            badge.className = 'msg__attachment-badge';
+            badge.textContent = file.kind === 'image' ? 'IMG' : 'TXT';
+            const name = document.createElement('span');
+            name.className = 'msg__attachment-name';
+            name.textContent = file.name;
+            chip.append(badge, name);
+            this.attachments.append(chip);
         }
 
         if (message.pending && !message.content && !message.reasoningContent) {

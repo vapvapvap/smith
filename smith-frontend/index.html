@@ -148,7 +148,13 @@
             </div>
 
             <form class="composer" id="composer">
+                <div class="composer__attachments" id="attachments" hidden></div>
                 <div class="composer__box">
+                    <button type="button" class="composer__attach" id="attach" title="Прикрепить файл" aria-label="Прикрепить файл">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                        </svg>
+                    </button>
                     <textarea class="composer__input" id="prompt" rows="1" placeholder="Напишите сообщение…" autocomplete="off"></textarea>
                     <button type="submit" class="composer__send" id="send" title="Отправить" aria-label="Отправить">
                         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -156,11 +162,22 @@
                         </svg>
                     </button>
                 </div>
-                <p class="composer__hint">Enter — отправить, Shift+Enter — новая строка</p>
+                <input type="file" id="file-input" class="composer__file" multiple
+                       accept="image/*,.txt,.md,.markdown,.csv,.json,.log,.yaml,.yml,.xml,.html,.css,.js,.ts,.java,.kt,.py,.sql,.sh" hidden>
+                <p class="composer__hint">Enter — отправить, Shift+Enter — новая строка · можно перетащить файлы</p>
             </form>
         </main>
 
         <div class="backdrop" id="backdrop"></div>
+
+        <div class="drop-overlay" id="drop-overlay">
+            <div class="drop-overlay__inner">
+                <svg class="icon drop-overlay__icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+                <span>Отпустите, чтобы прикрепить</span>
+            </div>
+        </div>
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>

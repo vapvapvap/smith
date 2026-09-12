@@ -106,7 +106,7 @@ class ChatControllerTest {
     @Test
     void modelsReturnsList() throws Exception {
         when(modelInfoService.availableModels())
-                .thenReturn(List.of(new ChatModelDto("DEEPSEEK_V4_FLASH", "deepseek-v4-flash")));
+                .thenReturn(List.of(new ChatModelDto("DEEPSEEK_V4_FLASH", "deepseek-v4-flash", false)));
 
         mvc.perform(get("/api/v1/models"))
                 .andExpect(status().isOk())

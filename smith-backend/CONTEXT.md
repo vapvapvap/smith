@@ -144,6 +144,44 @@ Apache HttpClient5 5.6.4 (httpcore5 5.4.3).
   виртуальным потоком): добавлено `mvcResult.getAsyncResult(10_000L)` перед
   `asyncDispatch`.
 
+### Авторизация (2026-09-12)
+- Добавлен `spring-boot-starter-security` (Spring Security 7.1.1).
+- Domain: `AppUser` (record), порт `UserRepository`.
+- Infrastructure: Flyway `V3__create_app_user.sql` (таблица `app_user`),
+  `V4__seed_users.sql` (5 пользователей с BCrypt-хэшами), `UserMapper`,
+  `PersistenceUserRepository`.
+- api-impl: `AppUserDetailsService`, `SecurityConfig` (BCryptPasswordEncoder,
+  form login `POST /api/auth/login`, logout `POST /api/auth/logout`, 401 для
+  `/api/**` без сессии, CSRF off, JSON success/failure), `AuthController`
+  (`GET /api/auth/me`). CORS: `allowCredentials(true)`.
+- Пользователи: `vap`, `lex`, `max`, `heh`, `art` (пароли — в
+  `CREDENTIALS.local.md` в корне репозитория, файл в `.gitignore`;
+  в VCS хранятся только BCrypt-хэши).
+- Проверено e2e: без сессии `GET /api/v1/models` -> 401; login -> 200 +
+  `JSESSIONID`; `/api/auth/me` -> `{username}`; logout -> 200 и снова 401.
+
+### Валидация `top_p` (2026-09-12)
+- DeepSeek принимает `top_p` только в диапазоне `(0, 1.0]`; `top_p=0` давал
+  `502` (ошибка провайдера) вместо понятной ошибки.
+- В `ChatCompletionRequest.topP` добавлены `@DecimalMin(value="0.0",
+  inclusive=false)` и `@DecimalMax("1.0")` -> невалидное значение даёт `400`
+  (`Validation failed`), без обращения к DeepSeek.
+- Фронтенд: поле `#top_p` ограничено `min=0.01`, `step=0.01`; в `buildPayload`
+  значения `<= 0` не отправляются, при вводе 0 показывается тост.
+
+### Вложения / vision (2026-09-12)
+- `LlmModel` получил флаг `supportsVision` (`DEEPSEEK_V4_FLASH_VISION_EXP` = true).
+- `ChatModelDto` отдаёт `vision` в `GET /api/v1/models`.
+- `ChatCompletionRequest.attachments` (`[{name, mime_type, data}]`, до 10) ->
+  domain `Attachment` (record с `isImage()`/`dataUri()`).
+- `DeepSeekLlmProvider`: при наличии изображений `messages[].content` становится
+  массивом `[{type:text,...},{type:image_url,image_url:{url:data:...}}]`
+  (OpenAI-совместимый формат), иначе — как раньше, строкой.
+- Валидация: не-image вложение или не-vision модель -> `400`
+  (`UnsupportedAttachmentException`).
+- `server.tomcat.max-http-post-size: 30MB` (base64-картинки в JSON).
+- Вложения в `chat_request` НЕ сохраняются (сохраняется только `prompt`).
+
 ### Проверка e2e (локально, профиль `local`)
 - `GET /api/v1/models` — 3 модели (алиас + имя провайдера).
 - `POST /chat/completions` — реальный ответ DeepSeek (DEEPSEEK_V4_FLASH),
@@ -160,6 +198,15 @@ Apache HttpClient5 5.6.4 (httpcore5 5.4.3).
 - В Boot 4 Flyway-autoconfig в отдельном модуле `spring-boot-flyway`;
   стартеры web разбиты (`spring-boot-starter-webmvc` вместо `starter-web`).
 - `top_k`/penalties принимаются в DTO и не передаются провайдеру (по плану).
+- Spring Security: CSRF отключён (REST + cookie-сессия, SPA); для `/api/**` без
+  сессии возвращается `401` (`HttpStatusEntryPoint`), без серверного редиректа.
+- В Boot 4 бин `ObjectMapper` (Jackson 2) не авто-конфигурируется — в
+  `SecurityConfig` создаётся вручную (`new ObjectMapper()`).
+- Cookie `JSESSIONID` без `SameSite` (Lax по умолчанию). Фронт вычисляет адрес
+  бэкенда от хоста страницы (`defaultBaseUrl()` в `js/config.js`), поэтому
+  cookie остаётся same-site и работает и с `localhost`, и с `127.0.0.1`.
+  Для кросс-доменного деплоя потребуется `SameSite=None; Secure` + HTTPS.
+- Аутентификация — session-based (не JWT) по решению заказчика.
 
 Следующие возможные шаги (не в текущей итерации): интеграционный тест
 контроллера с моком провайдера, Telegram-интеграция (`tg-api`/`tg-impl`).

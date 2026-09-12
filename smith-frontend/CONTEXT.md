@@ -40,6 +40,11 @@
 - **Модель по умолчанию — `DEEPSEEK_V4_FLASH`**; список моделей сортируется по
   `alias`, поэтому FLASH идёт первым.
 - **CORS в бэкенде** (`CorsConfig` + `app.cors.allowed-origins`), не прокси.
+- **Адрес бэкенда — от хоста страницы** (`defaultBaseUrl()` в `config.js`:
+  `http(s)://<hostname>:8080`), а не жёстко `localhost`. Иначе при открытии по
+  `127.0.0.1` cookie `JSESSIONID` (домен `localhost`) не отправлялась бы
+  кросс-сайтово (`SameSite=Lax`), и получался бесконечный редирект на логин.
+  Override — `window.SMITH_API_BASE_URL` / `localStorage['smith.baseUrl']`.
 
 ## 4. Проверенные факты
 
@@ -55,6 +60,12 @@
   `top_p`, `top_k`, `max_tokens`, `presence_penalty`, `frequency_penalty`, `stop`.
 - Ошибки: `{ status, error, message }` (400 — валидация/модель, 502 — провайдер,
   500 — внутренняя).
+- Авторизация (Spring Security, сессия):
+  - `POST /api/auth/login` — form-urlencoded `username`/`password` -> `200`
+    `{username}` + `Set-Cookie: JSESSIONID`; неверные данные -> `401`.
+  - `GET /api/auth/me` -> `{username}` или `401`.
+  - `POST /api/auth/logout` -> `200`.
+  - Без сессии любой `/api/**` -> `401`.
 
 ### 4.2 Формат SSE (подтверждён живым запросом)
 
@@ -122,22 +133,44 @@ chrome.exe --headless=new --disable-gpu --no-sandbox --no-first-run \
   `js/{config,api,state,render,app}.js`, `README.md`, `AGENTS.md`.
 - Дизайн: минимализм, светлая/тёмная темы, адаптив (выезжающий сайдбар на
   мобильных), SVG-иконки.
-- Функции: загрузка моделей и статус соединения, стриминг (SSE) и синхронный
-  режим, блок «Рассуждения», токены и `finishReason`, панель параметров,
-  переключатели «Стриминг ответа» и «Передавать контекст», markdown-lite
-  (код-фенсы и inline-код), `localStorage`, тосты об ошибках.
+- Функции: загрузка моделей и статус соединения, стриминг (SSE), блок
+  «Рассуждения», токены и `finishReason`, панель параметров, переключатель
+  «Передавать контекст», markdown-lite (код-фенсы и inline-код), `localStorage`,
+  тосты об ошибках.
 - CORS в `smith-backend`: `api-impl/.../config/CorsConfig.java`, проп
   `app.cors.allowed-origins` в `application.yml`.
-- Прокрутка блока «Параметры генерации» на низких экранах: тонкий скроллбар,
-  появляется только при нехватке высоты.
+- Блок «Параметры генерации» при раскрытии разворачивается полностью по высоте
+  без внутренней прокрутки; прокрутка общая у сайдбара (`.sidebar__body`).
 - Модель по умолчанию `DEEPSEEK_V4_FLASH`, список сортируется по `alias`.
 - Системный промпт: поле `#system-prompt` (textarea, Enter — перенос строки)
   отдельным блоком под «Параметрами генерации»; растягивается до низа сайдбара,
-  но не менее 200px (`.field--grow`); значение в `state.settings.systemPrompt`,
+  но не менее 150px (`.field--grow`); значение в `state.settings.systemPrompt`,
   в запрос уходит как `system_prompt` только если непустое.
 - Поля `presence_penalty`/`frequency_penalty` убраны из UI (deprecated у DeepSeek).
 - У каждого параметра генерации и системного промпта — иконка `.hint` с
   краткой подсказкой в `title`.
+- Авторизация: отдельная страница `login.html` (+ `js/login.js`,
+  `css/login.css`), серверная сессия (cookie `JSESSIONID`). Все запросы — с
+  `credentials: 'include'`; при `401` `api.js` редиректит на `login.html`.
+  `app.js` при старте вызывает `me()`; в сайдбаре — имя пользователя и
+  кнопка «Выйти». E2E (login/me/logout) проверен в headless Chrome.
+- `top_p` ограничен `(0, 1.0]` (DeepSeek не принимает 0): поле `#top_p` с
+  `min=0.01`, `step=0.01`; в `buildPayload` значения `<= 0` не отправляются,
+  при вводе 0 — тост «Top P должен быть больше 0».
+
+### Вложения (скрепка + drag-n-drop + vision)
+- `js/attachments.js` — состояние вложений в памяти, классификация
+  (image / text / unsupported), чтение через `FileReader` (dataURL для картинок,
+  текст для текстовых), превью-чипы, drag-n-drop с оверлеем.
+- В `index.html`: кнопка `#attach`, скрытый `#file-input` (`multiple`),
+  контейнер `#attachments`, оверлей `#drop-overlay`.
+- В `app.js`: `send()` разрешает пустой текст при наличии вложений; при
+  изображениях выбирается первая модель с `vision === true` (из `GET /models`);
+  текстовые файлы склеиваются в `prompt`; `buildPayload` добавляет
+  `attachments` (`{name, mime_type, data}`).
+- Вложения **не сохраняются** в `localStorage`: в сообщении только
+  `{kind, name, size}` (иначе base64 раздул бы хранилище).
+- Лимиты: 10 файлов, 20 МБ на файл, 50k символов на текстовый файл.
 
 ## 7. Отступления / известные ограничения
 

@@ -6,8 +6,8 @@ DeepSeek API. Поддерживает синхронный ответ (JSON) и
 
 ## Стек
 
-Java 25, Spring Boot 4.1.1, Gradle 9.7.1 (wrapper), MyBatis 4.1.0,
-HikariCP, Flyway 12.4.0, PostgreSQL 17, Apache HttpClient5 5.6.4,
+Java 25, Spring Boot 4.1.1, Spring Security 7.1.1, Gradle 9.7.1 (wrapper),
+MyBatis 4.1.0, HikariCP, Flyway 12.4.0, PostgreSQL 17, Apache HttpClient5 5.6.4,
 springdoc-openapi 3.1.1.
 
 ## Модули
@@ -55,6 +55,26 @@ java -jar api-impl\build\libs\api-impl-0.1.0.jar
 Swagger UI: http://localhost:8080/swagger-ui.html
 Спецификация: http://localhost:8080/v3/api-docs
 
+### Авторизация
+
+Все эндпоинты `/api/**` (кроме `/api/auth/login` и `/api/auth/logout`) требуют
+активной сессии. Аутентификация — form login с серверной сессией (`JSESSIONID`).
+
+```bash
+# Вход (form-urlencoded)
+curl -c cookies.txt -X POST http://localhost:8080/api/auth/login \
+  -d "username=vap&password=<пароль>"
+
+# Текущий пользователь
+curl -b cookies.txt http://localhost:8080/api/auth/me
+
+# Выход
+curl -b cookies.txt -X POST http://localhost:8080/api/auth/logout
+```
+
+Пользователи (создаются миграцией `V4__seed_users.sql`, пароли — BCrypt):
+`vap`, `lex`, `max`, `heh`, `art`. При запросе без сессии — `401`.
+
 ### POST /api/v1/chat/completions — синхронный ответ (JSON)
 
 ```bash
@@ -87,7 +107,7 @@ curl http://localhost:8080/api/v1/models
 | `prompt` | да | — | `messages[0].content` |
 | `model` | да | — | резолв в имя провайдера через `ModelRegistry` |
 | `temperature` | нет | 1.0 | да |
-| `top_p` | нет | 1.0 | да |
+| `top_p` | нет | 1.0 | да (диапазон `(0, 1.0]`) |
 | `top_k` | нет | — | нет |
 | `presence_penalty` | нет | 0.0 | нет |
 | `frequency_penalty` | нет | 0.0 | нет |
@@ -111,6 +131,7 @@ curl http://localhost:8080/api/v1/models
 ## Коды ошибок
 
 - `400` — некорректный запрос (валидация) или неизвестная модель.
+- `401` — нет активной сессии (нужен вход).
 - `502` — ошибка LLM-провайдера.
 - `500` — внутренняя ошибка.
 

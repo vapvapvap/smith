@@ -86,7 +86,13 @@ public class DeepSeekCompletionRequest {
         this.thinking = thinking;
     }
 
-    public record Message(String role, String content) {
+    public record Message(String role, Object content) {
+    }
+
+    public record ContentPart(String type, String text, ImageUrl imageUrl) {
+    }
+
+    public record ImageUrl(String url) {
     }
 
     public record StreamOptions(boolean includeUsage) {

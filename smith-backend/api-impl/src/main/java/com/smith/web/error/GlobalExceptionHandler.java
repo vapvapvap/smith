@@ -2,6 +2,7 @@ package com.smith.web.error;
 
 import com.smith.domain.exception.LlmProviderException;
 import com.smith.domain.exception.UnknownModelException;
+import com.smith.domain.exception.UnsupportedAttachmentException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,6 +27,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleUnknownModel(UnknownModelException ex) {
         return ResponseEntity.badRequest().body(new ApiError(
                 HttpStatus.BAD_REQUEST.value(), "Unknown model", ex.getMessage()));
+    }
+
+    @ExceptionHandler(UnsupportedAttachmentException.class)
+    public ResponseEntity<ApiError> handleUnsupportedAttachment(UnsupportedAttachmentException ex) {
+        return ResponseEntity.badRequest().body(new ApiError(
+                HttpStatus.BAD_REQUEST.value(), "Unsupported attachment", ex.getMessage()));
     }
 
     @ExceptionHandler(LlmProviderException.class)

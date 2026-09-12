@@ -65,6 +65,10 @@ public class ChatCompletionRequest {
     @Schema(description = "Усилия рассуждения", defaultValue = "high")
     private ReasoningEffort reasoningEffort;
 
+    @Schema(description = "Прикреплённые изображения (vision)")
+    @Size(max = 10, message = "attachments must contain at most 10 items")
+    private List<AttachmentDto> attachments;
+
     public String getPrompt() {
         return prompt;
     }
@@ -167,5 +171,13 @@ public class ChatCompletionRequest {
 
     public void setReasoningEffort(ReasoningEffort reasoningEffort) {
         this.reasoningEffort = reasoningEffort;
+    }
+
+    public List<AttachmentDto> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(List<AttachmentDto> attachments) {
+        this.attachments = attachments;
     }
 }

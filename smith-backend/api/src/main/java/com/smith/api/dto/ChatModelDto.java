@@ -11,12 +11,16 @@ public class ChatModelDto {
     @Schema(description = "Имя модели у провайдера", example = "deepseek-v4-pro")
     private String providerName;
 
+    @Schema(description = "Поддерживает ли модель изображения (vision)", example = "false")
+    private boolean vision;
+
     public ChatModelDto() {
     }
 
-    public ChatModelDto(String alias, String providerName) {
+    public ChatModelDto(String alias, String providerName, boolean vision) {
         this.alias = alias;
         this.providerName = providerName;
+        this.vision = vision;
     }
 
     public String getAlias() {
@@ -33,5 +37,13 @@ public class ChatModelDto {
 
     public void setProviderName(String providerName) {
         this.providerName = providerName;
+    }
+
+    public boolean isVision() {
+        return vision;
+    }
+
+    public void setVision(boolean vision) {
+        this.vision = vision;
     }
 }

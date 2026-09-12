@@ -23,8 +23,9 @@ stop) и вызывает DeepSeek API, возвращая ответ (JSON) л�
 
 ## Стек (согласован)
 
-Java 25, Gradle 9.7.1, Spring Boot 4.1.1, MyBatis 4.1.0, HikariCP 7.0.2,
-Flyway 12.4.0, PostgreSQL 17, Apache HttpClient5 5.6.4, springdoc-openapi 3.1.1.
+Java 25, Gradle 9.7.1, Spring Boot 4.1.1, Spring Security 7.1.1, MyBatis 4.1.0,
+HikariCP 7.0.2, Flyway 12.4.0, PostgreSQL 17, Apache HttpClient5 5.6.4,
+springdoc-openapi 3.1.1.
 
 ## Модули и зависимости
 
@@ -43,12 +44,24 @@ Flyway 12.4.0, PostgreSQL 17, Apache HttpClient5 5.6.4, springdoc-openapi 3.1.1.
   `role=system` перед пользовательским `role=user`; хранится в `chat_request.system_prompt`.
 - `top_k`, `presence_penalty`, `frequency_penalty` принимаются в DTO, но НЕ
   передаются в DeepSeek (не поддерживаются).
+- Вложения (`attachments`, только изображения) передаются base64 в JSON запроса
+  и уходят в vision-модель (`DEEPSEEK_V4_FLASH_VISION_EXP`) как `image_url`
+  (data URI). `GET /api/v1/models` возвращает флаг `vision`. Не-image вложение
+  или не-vision модель -> `400`.
 - Режимы ответа: `stream=false` -> JSON, `stream=true` -> SSE (`SseEmitter`).
+- Авторизация — session cookie (`JSESSIONID`) + Spring Security form login на
+  `POST /api/auth/login` (`username`/`password`, `application/x-www-form-urlencoded`).
+  Пользователи — таблица `app_user` (BCrypt-хэши), порт `UserRepository`,
+  `AppUserDetailsService`. Без сессии `/api/**` -> `401`. CSRF отключён.
+  Открыты: `/api/auth/login`, `/api/auth/logout`, Swagger, `/error`.
+  `GET /api/auth/me` возвращает `{username}` (требует сессии).
 
 ## Доступы (локальная разработка)
 
 - PostgreSQL: `localhost:5432`, БД `ai_agent`, user `postgres`.
   Пароль и DeepSeek API-ключ — в `CONTEXT.md` (раздел «Доступы и секреты»).
+- Логины/пароли пользователей приложения: `CREDENTIALS.local.md` в корне
+  репозитория (в `.gitignore`, не коммитится).
 - `psql`: `C:\Program Files\PostgreSQL\17\bin\psql.exe` (не в PATH).
 - JDK 25: `C:\Program Files\Java\jdk-25.0.4` (JAVA_HOME может быть не задан —
   выставлять в командах: `$env:JAVA_HOME="C:\Program Files\Java\jdk-25.0.4"`).
@@ -65,3 +78,6 @@ Flyway 12.4.0, PostgreSQL 17, Apache HttpClient5 5.6.4, springdoc-openapi 3.1.1.
 - Проверка: Swagger `http://localhost:8080/swagger-ui.html`;
   модели `GET /api/v1/models`; sync `POST /api/v1/chat/completions`;
   SSE `POST /api/v1/chat/completions/stream`.
+- Авторизация: `POST /api/auth/login` (form-urlencoded), `POST /api/auth/logout`,
+  `GET /api/auth/me`. Пользователи: `vap`, `lex`, `max`, `heh`, `art`
+  (пароли — BCrypt в `V4__seed_users.sql`, см. итоги сессии).

@@ -16,7 +16,7 @@ public class ModelInfoService {
 
     public List<ChatModelDto> availableModels() {
         return modelRegistry.availableModels().stream()
-                .map(model -> new ChatModelDto(model.name(), model.providerName()))
+                .map(model -> new ChatModelDto(model.name(), model.providerName(), model.supportsVision()))
                 .toList();
     }
 }

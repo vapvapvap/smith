@@ -1,4 +1,5 @@
 import { fetchModels, streamCompletion, me, logout } from './api.js';
+import { initAttachments } from './attachments.js';
 import { CONTEXT_CHAR_LIMIT } from './config.js';
 import { MessageView } from './render.js';
 import {
@@ -47,6 +48,7 @@ const numberFields = [
 
 const views = new Map();
 let toastTimer = null;
+let attachments = null;
 
 function applyTheme() {
     document.documentElement.dataset.theme = state.theme;
@@ -188,11 +190,11 @@ function buildPrompt(history, current) {
     return text;
 }
 
-function buildPayload(prompt) {
+function buildPayload(prompt, model, images) {
     const s = state.settings;
     const payload = {
         prompt,
-        model: s.model,
+        model,
         stream: true,
         thinking: s.thinking,
         reasoning_effort: s.reasoning_effort,
@@ -219,6 +221,9 @@ function buildPayload(prompt) {
     if (systemPrompt) {
         payload.system_prompt = systemPrompt;
     }
+    if (images && images.length > 0) {
+        payload.attachments = images;
+    }
     return payload;
 }
 
@@ -230,7 +235,8 @@ function setStreaming(active) {
 
 async function send() {
     const text = dom.prompt.value.trim();
-    if (!text || state.streaming) {
+    const hasFiles = attachments.hasAny();
+    if ((!text && !hasFiles) || state.streaming) {
         return;
     }
     if (!state.settings.model) {
@@ -244,9 +250,23 @@ async function send() {
         return;
     }
 
-    const prompt = buildPrompt(state.messages, text);
+    const images = attachments.getImagePayload();
+    let model = state.settings.model;
+    if (images.length > 0) {
+        const visionModel = state.models.find((item) => item.vision);
+        if (!visionModel) {
+            showToast('Нет доступной vision-модели для изображений', true);
+            return;
+        }
+        model = visionModel.alias;
+    }
 
-    const userMessage = { id: newId(), role: 'user', content: text };
+    const textContext = attachments.getTextContext();
+    const fullText = [text, textContext].filter(Boolean).join('\n\n');
+    const prompt = buildPrompt(state.messages, fullText);
+    const previews = attachments.getPreviews();
+
+    const userMessage = { id: newId(), role: 'user', content: text, attachments: previews };
     state.messages.push(userMessage);
     appendMessageView(userMessage);
 
@@ -263,9 +283,10 @@ async function send() {
 
     dom.prompt.value = '';
     autoResize();
+    attachments.clear();
     setStreaming(true);
 
-    const payload = buildPayload(prompt);
+    const payload = buildPayload(prompt, model, images);
     try {
         await streamCompletion(payload, {
             onChunk: (data) => {
@@ -345,6 +366,10 @@ function bindSettings() {
 }
 
 function bindEvents() {
+    attachments = initAttachments({
+        onError: (message) => showToast(message, true),
+    });
+
     dom.composer.addEventListener('submit', (event) => {
         event.preventDefault();
         send();
@@ -361,6 +386,7 @@ function bindEvents() {
     const clear = () => {
         resetMessages();
         renderMessages();
+        attachments.clear();
         dom.chatTitle.textContent = 'Новый диалог';
         closeSidebar();
         dom.prompt.focus();

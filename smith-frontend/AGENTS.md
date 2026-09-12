@@ -34,22 +34,28 @@ JavaScript ES-модули (ES2020+), Fetch API, `ReadableStream` для раз�
 ```
 smith-frontend/
 ├── index.html          # разметка: сайдбар, чат-лента, composer
+├── login.html          # страница входа (логин/пароль)
 ├── css/
 │   ├── base.css        # reset, CSS-переменные тем, типографика
-│   └── app.css         # layout, компоненты, адаптив
+│   ├── app.css         # layout, компоненты, адаптив
+│   └── login.css       # стили страницы входа
 ├── js/
-│   ├── config.js       # базовый URL бэкенда, лимит контекста
-│   ├── api.js          # запросы к API + SSE-парсер
+│   ├── config.js       # базовый URL бэкенда, apiUrl/authUrl, лимит контекста
+│   ├── api.js          # запросы к API + SSE-парсер + login/logout/me
 │   ├── state.js        # состояние и localStorage
 │   ├── render.js       # рендер сообщений, markdown-lite
+│   ├── attachments.js  # вложения: скрепка, drag-n-drop, чтение файлов
+│   ├── login.js        # логика страницы входа
 │   └── app.js          # точка входа, обработчики, связка модулей
 └── README.md
 ```
 
 ## Ключевые соглашения
 
-- Адрес бэкенда — в `js/config.js` (`DEFAULT_BASE_URL`), переопределяется через
-  `window.SMITH_API_BASE_URL` или `localStorage['smith.baseUrl']`.
+- Адрес бэкенда вычисляется в `js/config.js` от хоста страницы
+  (`http(s)://<hostname>:8080`), переопределяется через
+  `window.SMITH_API_BASE_URL` или `localStorage['smith.baseUrl']`. Благодаря
+  этому cookie сессии остаётся same-site и при `localhost`, и при `127.0.0.1`.
 - Префикс API — `/api/v1` (константа в `config.js`).
 - Стриминг: `EventSource` **не подходит** (эндпоинт POST), поэтому SSE
   читается вручную из `response.body.getReader()` и разбирается в `api.js`.
@@ -60,17 +66,30 @@ smith-frontend/
   `system_prompt`.
 - Системный промпт — поле под «Параметрами генерации» (`#system-prompt`),
   хранится в `state.settings.systemPrompt`; при непустом значении уходит как
-  `system_prompt`. Поле растягивается до низа сайдбара (не менее 200px), Enter
+  `system_prompt`. Поле растягивается до низа сайдбара (не менее 150px), Enter
   переносит строку.
 - У бэкенда **нет многоходового диалога** (принимает один `prompt`). Контекст
   собирается на клиенте (переключатель «Передавать контекст»), лимит —
   `CONTEXT_CHAR_LIMIT`.
 - Настройки, лента и тема хранятся в `localStorage` (`state.js`).
 - Тема — через атрибут `data-theme` на `<html>` и CSS-переменные.
+- **Вложения:** кнопка-скрепка (`#attach`) и drag-n-drop (`js/attachments.js`).
+  Изображения уходят в `attachments` запроса (`{name, mime_type, data}` base64) и
+  автоматически переключают модель на vision (`model.vision === true` из
+  `GET /models`). Текстовые файлы (txt/md/csv/json/…, до 50k символов) читаются
+  на клиенте и вставляются в `prompt`; прочие типы отклоняются. Вложения не
+  персистятся в `localStorage` (в сообщении хранятся только имя/тип/размер).
+- **Авторизация:** серверная сессия (cookie `JSESSIONID`), все fetch идут с
+  `credentials: 'include'`. Вход — `login.html` (`js/login.js`), при `401`
+  `api.js` делает `window.location.replace('login.html')`. При старте `app.js`
+  вызывает `me()`; без сессии — редирект на логин. В сайдбаре — имя
+  пользователя и кнопка «Выйти» (`logout()`). Адрес бэкенда берётся от хоста
+  страницы, поэтому cookie `JSESSIONID` отправляется и с `localhost`, и с
+  `127.0.0.1` (иначе `SameSite=Lax` блокирует кросс-сайтовые запросы).
 
 ## Бэкенд и CORS
 
-- Бэкенд по умолчанию: `http://localhost:8080`.
+- Бэкенд по умолчанию: тот же хост, порт `8080` (см. `js/config.js`).
 - CORS настраивается в `smith-backend` (`app.cors.allowed-origins` в
   `application.yml`, env `CORS_ALLOWED_ORIGINS`). По умолчанию разрешены
   `localhost`/`127.0.0.1` на портах `8000`, `5500`, `5173`.
@@ -83,8 +102,11 @@ smith-frontend/
 ```powershell
 # из папки smith-frontend
 python -m http.server 8000 --bind 127.0.0.1
-# открыть http://127.0.0.1:8000
+# открыть http://localhost:8000 или http://127.0.0.1:8000
 ```
+
+> Адрес бэкенда определяется по хосту страницы, поэтому оба варианта
+> (`localhost`/`127.0.0.1`) работают с сессионной cookie.
 
 ## Проверка
 
@@ -94,12 +116,12 @@ python -m http.server 8000 --bind 127.0.0.1
 
 - загрузка моделей и статус соединения в сайдбаре;
 - стриминг ответа и блок «Рассуждения»;
-- синхронный режим (`Стриминг` выключен);
 - ошибка провайдера (`error`/HTTP 502) отображается в сообщении и тостом;
 - темы, адаптив (панель на мобильном), сохранение настроек после перезагрузки.
 
 ## Текущее состояние
 
 Реализован полный клиент: модели, JSON и SSE, параметры генерации, контекст,
-темы, адаптив, `localStorage`. Проверено вживую: `GET /api/v1/models`, CORS
-preflight, реальный SSE-поток DeepSeek.
+темы, адаптив, `localStorage`, авторизация (страница входа, сессия, выход).
+Проверено вживую: `GET /api/v1/models`, CORS preflight, реальный SSE-поток
+DeepSeek; e2e входа/выхода через headless Chrome.
