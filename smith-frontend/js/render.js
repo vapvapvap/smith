@@ -21,6 +21,16 @@ export function renderMarkdown(text) {
     return html;
 }
 
+function downloadAttachment(file) {
+    const blob = new Blob([file.text], { type: file.mimeType || 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = file.name;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
 function formatTokens(usage) {
     if (!usage) {
         return '';
@@ -84,6 +94,20 @@ export class MessageView {
         this.attachments.replaceChildren();
         this.attachments.hidden = files.length === 0;
         for (const file of files) {
+            if (file.kind === 'image' && file.dataUrl) {
+                const thumb = document.createElement('button');
+                thumb.type = 'button';
+                thumb.className = 'msg__img-thumb';
+                thumb.title = file.name;
+                thumb.setAttribute('aria-label', `Открыть ${file.name}`);
+                const img = document.createElement('img');
+                img.src = file.dataUrl;
+                img.alt = file.name;
+                thumb.append(img);
+                this.attachments.append(thumb);
+                continue;
+            }
+
             const chip = document.createElement('span');
             chip.className = 'msg__attachment';
             const badge = document.createElement('span');
@@ -93,6 +117,16 @@ export class MessageView {
             name.className = 'msg__attachment-name';
             name.textContent = file.name;
             chip.append(badge, name);
+            if (file.kind === 'text' && typeof file.text === 'string') {
+                const download = document.createElement('button');
+                download.type = 'button';
+                download.className = 'msg__attachment-download';
+                download.title = 'Скачать файл';
+                download.setAttribute('aria-label', `Скачать ${file.name}`);
+                download.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>';
+                download.addEventListener('click', () => downloadAttachment(file));
+                chip.append(download);
+            }
             this.attachments.append(chip);
         }
 

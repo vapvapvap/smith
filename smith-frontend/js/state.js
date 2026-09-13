@@ -180,14 +180,28 @@ export function persistMessages() {
     persistBranches();
 }
 
+function stripAttachmentData(message) {
+    if (!Array.isArray(message.attachments) || message.attachments.length === 0) {
+        return message;
+    }
+    return {
+        ...message,
+        attachments: message.attachments.map(({ dataUrl, text, ...meta }) => meta),
+    };
+}
+
 export function persistBranches() {
     const branch = activeBranch();
     if (branch) {
         branch.messages = state.messages;
     }
+    const branches = state.branches.map((item) => ({
+        ...item,
+        messages: item.messages.map(stripAttachmentData),
+    }));
     localStorage.setItem(BRANCHES_KEY, JSON.stringify({
         activeBranchId: state.activeBranchId,
-        branches: state.branches,
+        branches,
     }));
 }
 

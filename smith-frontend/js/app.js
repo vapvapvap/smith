@@ -65,6 +65,9 @@ const dom = {
     status: el('status'),
     statusText: el('status-text'),
     toast: el('toast'),
+    lightbox: el('lightbox'),
+    lightboxImg: el('lightbox-img'),
+    lightboxClose: el('lightbox-close'),
     chatTitle: el('chat-title'),
     user: el('current-user'),
     logout: el('logout'),
@@ -99,6 +102,16 @@ function showToast(message, isError = false) {
     toastTimer = setTimeout(() => {
         dom.toast.classList.remove('toast--visible');
     }, 4000);
+}
+
+function openLightbox(src) {
+    dom.lightboxImg.src = src;
+    dom.lightbox.classList.add('lightbox--visible');
+}
+
+function closeLightbox() {
+    dom.lightbox.classList.remove('lightbox--visible');
+    dom.lightboxImg.removeAttribute('src');
 }
 
 function isNearBottom() {
@@ -742,6 +755,7 @@ function bindEvents() {
         renderBranches();
         renderFacts();
         attachments.clear();
+        closeLightbox();
         dom.chatTitle.textContent = 'Новый диалог';
         closeSidebar();
         dom.prompt.focus();
@@ -750,6 +764,14 @@ function bindEvents() {
     dom.clearChat.addEventListener('click', clear);
 
     dom.messagesList.addEventListener('click', (event) => {
+        const thumb = event.target.closest('.msg__img-thumb');
+        if (thumb) {
+            const img = thumb.querySelector('img');
+            if (img) {
+                openLightbox(img.src);
+            }
+            return;
+        }
         const forkButton = event.target.closest('.msg__fork');
         if (!forkButton) {
             return;
@@ -806,6 +828,18 @@ function bindEvents() {
     dom.sidebarOpen.addEventListener('click', openSidebar);
     dom.sidebarClose.addEventListener('click', closeSidebar);
     dom.backdrop.addEventListener('click', closeSidebar);
+
+    dom.lightbox.addEventListener('click', (event) => {
+        if (event.target === dom.lightbox) {
+            closeLightbox();
+        }
+    });
+    dom.lightboxClose.addEventListener('click', closeLightbox);
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && dom.lightbox.classList.contains('lightbox--visible')) {
+            closeLightbox();
+        }
+    });
 
     dom.logout.addEventListener('click', async () => {
         await logout();

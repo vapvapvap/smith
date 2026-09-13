@@ -88,12 +88,7 @@ async function toItem(file) {
             base64: dataUrl.slice(comma + 1),
         };
     }
-    let text = await readAsText(file);
-    let truncated = false;
-    if (text.length > MAX_TEXT_LENGTH) {
-        text = text.slice(0, MAX_TEXT_LENGTH);
-        truncated = true;
-    }
+    const text = await readAsText(file);
     return {
         id: crypto.randomUUID ? crypto.randomUUID() : `att-${Date.now()}-${Math.random()}`,
         kind,
@@ -101,7 +96,7 @@ async function toItem(file) {
         mimeType: file.type || 'text/plain',
         size: file.size,
         text,
-        truncated,
+        truncated: text.length > MAX_TEXT_LENGTH,
     };
 }
 
@@ -208,15 +203,24 @@ function getImagePayload() {
 function getTextContext() {
     return items
         .filter((item) => item.kind === 'text')
-        .map((item) => `[файл: ${item.name}]\n${item.text}${item.truncated ? '\n…[файл обрезан]' : ''}`)
+        .map((item) => {
+            const body = item.text.length > MAX_TEXT_LENGTH
+                ? item.text.slice(0, MAX_TEXT_LENGTH)
+                : item.text;
+            return `[файл: ${item.name}]\n${body}${item.truncated ? '\n…[файл обрезан]' : ''}`;
+        })
         .join('\n\n');
 }
 
 function getPreviews() {
     return items.map((item) => ({
+        id: item.id,
         kind: item.kind,
         name: item.name,
         size: item.size,
+        mimeType: item.mimeType,
+        dataUrl: item.kind === 'image' ? item.dataUrl : undefined,
+        text: item.kind === 'text' ? item.text : undefined,
     }));
 }
 

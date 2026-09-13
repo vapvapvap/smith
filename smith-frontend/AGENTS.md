@@ -128,6 +128,15 @@ smith-frontend/
   `GET /models`). Текстовые файлы (txt/md/csv/json/…, до 50k символов) читаются
   на клиенте и вставляются в `prompt`; прочие типы отклоняются. Вложения не
   персистятся в `localStorage` (в сообщении хранятся только имя/тип/размер).
+- **Отображение вложений в ленте** (`js/render.js`): изображение — кликабельная
+  миниатюра `.msg__img-thumb`, по клику открывается lightbox (`#lightbox`,
+  закрытие — клик по фону, крестик или Esc). Текстовый файл — чип с кнопкой
+  скачивания `.msg__attachment-download` (Blob из `file.text`). Данные файлов
+  (`dataUrl`/`text`) хранятся только в памяти текущей сессии; после перезагрузки
+  остаются чипы-метаданные без превью/скачивания.
+- **Данные файлов не попадают в `localStorage`:** `persistBranches()`
+  (`state.js`) прогоняет сообщения через `stripAttachmentData()`, вычищая
+  `dataUrl` и `text` из `attachments` (иначе base64 раздул бы хранилище).
 - **Авторизация:** серверная сессия (cookie `JSESSIONID`), все fetch идут с
   `credentials: 'include'`. Вход — `login.html` (`js/login.js`), при `401`
   `api.js` делает `window.location.replace('login.html')`. При старте `app.js`

@@ -745,6 +745,53 @@ select.input {
     white-space: nowrap;
 }
 
+.msg__attachment-download {
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-faint);
+    flex: none;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.msg__attachment-download:hover {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.msg__attachment-download .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.msg__img-thumb {
+    display: block;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    overflow: hidden;
+    line-height: 0;
+    cursor: pointer;
+}
+
+.msg__img-thumb img {
+    display: block;
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    transition: opacity 0.15s ease;
+}
+
+.msg__img-thumb:hover img {
+    opacity: 0.85;
+}
+
 .reasoning {
     margin-bottom: 8px;
     border: 1px dashed var(--border-strong);
@@ -1146,6 +1193,56 @@ select.input {
     width: 28px;
     height: 28px;
     color: var(--text-muted);
+}
+
+/* ---------- Lightbox ---------- */
+
+.lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    place-items: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.82);
+    cursor: zoom-out;
+}
+
+.lightbox--visible {
+    display: grid;
+}
+
+.lightbox__img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    cursor: default;
+}
+
+.lightbox__close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.lightbox__close:hover {
+    background: rgba(255, 255, 255, 0.26);
+}
+
+.lightbox__close .icon {
+    width: 20px;
+    height: 20px;
 }
 
 /* ---------- Responsive ---------- */
