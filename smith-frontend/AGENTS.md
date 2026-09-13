@@ -61,6 +61,8 @@ smith-frontend/
   читается вручную из `response.body.getReader()` и разбирается в `api.js`.
 - События SSE: `chunk` (`{content, reasoningContent}`), `usage`, `done`
   (`{finishReason}`), `error` (`{message}`).
+- `POST /api/v1/chat/summarize` (`{text, model}`) -> `{summary, usage}` —
+  саммаризация контекста (sync JSON, `summarizeCompletion()` в `api.js`).
 - Панель статистики токенов (`#token-stats`) под лентой диалога: «текущий запрос»
   (promptTokens последнего ответа), «история диалога» (сумма prompt+completion
   по всем ответам за сессию), «ответ модели» (completionTokens последнего
@@ -76,6 +78,16 @@ smith-frontend/
 - У бэкенда **нет многоходового диалога** (принимает один `prompt`). Контекст
   собирается на клиенте (переключатель «Передавать контекст»), лимит —
   `CONTEXT_CHAR_LIMIT`.
+- **Саммаризация контекста** (под переключателем «Передавать контекст»): галочка
+  `#summarize-toggle` + числовое поле `#summary-interval` («каждые N сообщений»,
+  по умолчанию 10). Активны только при включённом контексте; поле — только при
+  включённой саммаризации. Каждые N сообщений диалога (user+assistant)
+  `maybeSummarize()` вызывает `POST /chat/summarize`, добавляет системное
+  сообщение (`role=system`, класс `msg--system`) и сохраняет `state.summary`
+  (`text`, `coveredCount`, накопленный `usage`) в `localStorage['smith.summary']`.
+  Контекст: до первого саммари — вся история; после — `саммари + сообщения после
+  него` (rolling). Токены саммаризации учитываются в панели `#token-stats`
+  (пункт «Саммаризация» + входят в «Историю диалога»).
 - Настройки, лента и тема хранятся в `localStorage` (`state.js`).
 - Тема — через атрибут `data-theme` на `<html>` и CSS-переменные.
 - **Вложения:** кнопка-скрепка (`#attach`) и drag-n-drop (`js/attachments.js`).

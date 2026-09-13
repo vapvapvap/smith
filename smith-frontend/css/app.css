@@ -280,6 +280,36 @@ select.input {
     color: var(--text);
 }
 
+.switch:has(input:disabled) {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.field--summary {
+    padding-left: 14px;
+    border-left: 2px solid var(--border);
+}
+
+.summary-interval {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.summary-interval .input {
+    width: 74px;
+}
+
+.summary-interval__suffix {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 .hint {
     display: inline-grid;
     place-items: center;
@@ -478,6 +508,29 @@ select.input {
     background: var(--surface);
     border: 1px solid var(--border);
     border-bottom-left-radius: 4px;
+}
+
+.msg--system {
+    justify-content: center;
+}
+
+.msg--system .msg__avatar {
+    background: var(--surface-2);
+    color: var(--text-faint);
+    border: 1px dashed var(--border-strong);
+}
+
+.msg--system .msg__content {
+    max-width: 100%;
+    text-align: center;
+}
+
+.msg--system .msg__bubble {
+    background: var(--surface-2);
+    border: 1px dashed var(--border-strong);
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: left;
 }
 
 .msg__bubble:empty {

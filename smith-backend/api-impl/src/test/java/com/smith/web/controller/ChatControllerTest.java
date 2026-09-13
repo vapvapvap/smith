@@ -3,6 +3,9 @@ package com.smith.web.controller;
 import com.smith.api.dto.ChatCompletionRequest;
 import com.smith.api.dto.ChatCompletionResponse;
 import com.smith.api.dto.ChatModelDto;
+import com.smith.api.dto.SummarizeRequest;
+import com.smith.api.dto.SummarizeResponse;
+import com.smith.api.dto.UsageDto;
 import com.smith.application.service.ChatCompletionService;
 import com.smith.application.service.ModelInfoService;
 import com.smith.domain.exception.UnknownModelException;
@@ -99,6 +102,28 @@ class ChatControllerTest {
         mvc.perform(post("/api/v1/chat/completions")
                         .contentType(JSON_UTF8)
                         .content("{\"prompt\":\"\",\"model\":\"DEEPSEEK_FLASH\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation failed"));
+    }
+
+    @Test
+    void summarizeReturnsJson() throws Exception {
+        when(completionService.summarize(any(SummarizeRequest.class)))
+                .thenReturn(new SummarizeResponse("саммари", new UsageDto(3, 4, 7)));
+
+        mvc.perform(post("/api/v1/chat/summarize")
+                        .contentType(JSON_UTF8)
+                        .content("{\"text\":\"диалог\",\"model\":\"DEEPSEEK_FLASH\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary").value("саммари"))
+                .andExpect(jsonPath("$.usage.totalTokens").value(7));
+    }
+
+    @Test
+    void summarizeValidationErrorReturns400() throws Exception {
+        mvc.perform(post("/api/v1/chat/summarize")
+                        .contentType(JSON_UTF8)
+                        .content("{\"text\":\"\",\"model\":\"DEEPSEEK_FLASH\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation failed"));
     }

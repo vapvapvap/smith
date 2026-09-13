@@ -4,6 +4,8 @@ import com.smith.api.ChatApi;
 import com.smith.api.dto.ChatCompletionRequest;
 import com.smith.api.dto.ChatCompletionResponse;
 import com.smith.api.dto.ChatModelDto;
+import com.smith.api.dto.SummarizeRequest;
+import com.smith.api.dto.SummarizeResponse;
 import com.smith.application.service.ChatCompletionService;
 import com.smith.application.service.ModelInfoService;
 import com.smith.web.stream.SseStreamListener;
@@ -48,6 +50,12 @@ public class ChatController implements ChatApi {
         SseEmitter emitter = new SseEmitter(0L);
         streamExecutor.execute(() -> completionService.stream(request, new SseStreamListener(emitter)));
         return emitter;
+    }
+
+    @PostMapping(value = "/chat/summarize", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Override
+    public SummarizeResponse summarize(@Valid @RequestBody SummarizeRequest request) {
+        return completionService.summarize(request);
     }
 
     @GetMapping("/models")

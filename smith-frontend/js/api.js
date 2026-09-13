@@ -88,6 +88,20 @@ export async function complete(payload) {
     return response.json();
 }
 
+export async function summarizeCompletion(payload) {
+    const response = await fetch(apiUrl('/chat/summarize'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include',
+    });
+    ensureAuthorized(response);
+    if (!response.ok) {
+        throw await toError(response);
+    }
+    return response.json();
+}
+
 function parseEvent(raw) {
     let event = 'message';
     const dataLines = [];

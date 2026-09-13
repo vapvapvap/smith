@@ -182,6 +182,18 @@ Apache HttpClient5 5.6.4 (httpcore5 5.4.3).
 - `server.tomcat.max-http-post-size: 30MB` (base64-картинки в JSON).
 - Вложения в `chat_request` НЕ сохраняются (сохраняется только `prompt`).
 
+### Саммаризация контекста (2026-09-13)
+- `POST /api/v1/chat/summarize` (`SummarizeRequest{text, model}` ->
+  `SummarizeResponse{summary, usage}`): сжатие истории диалога.
+- `ChatCompletionService.summarize(...)` резолвит модель, строит `ChatRequest`
+  с фиксированным системным промптом (`SUMMARIZE_SYSTEM_PROMPT`),
+  `thinking=DISABLED`, без вложений, вызывает `llmProvider.complete(...)` и
+  НЕ сохраняет запись в `chat_request` (саммаризация — внутренняя операция).
+  Возвращает `usage` для учёта расхода токенов на клиенте.
+- DTO в модуле `api`; endpoint в `ChatController`. Тесты:
+  `ChatCompletionServiceTest.summarizeDoesNotPersistAndUsesSummarizePrompt`,
+  `ChatControllerTest.summarizeReturnsJson` / `summarizeValidationErrorReturns400`.
+
 ### Проверка e2e (локально, профиль `local`)
 - `GET /api/v1/models` — 2 модели (алиас + имя провайдера).
 - `POST /chat/completions` — реальный ответ DeepSeek (DEEPSEEK_FLASH),

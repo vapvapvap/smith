@@ -69,8 +69,9 @@ export class MessageView {
 
     update(message) {
         const isUser = message.role === 'user';
+        const isSystem = message.role === 'system';
         this.el.className = `msg msg--${message.role}${message.error ? ' msg--error' : ''}`;
-        this.el.querySelector('.msg__avatar').textContent = isUser ? 'U' : 'S';
+        this.el.querySelector('.msg__avatar').textContent = isUser ? 'U' : (isSystem ? '∑' : 'S');
 
         if (message.reasoningContent) {
             this.reasoning.hidden = false;
