@@ -13,7 +13,7 @@ class DefaultModelRegistryTest {
 
     @Test
     void resolvesAliasCaseInsensitively() {
-        assertThat(registry.resolve("deepseek_v4_flash")).isEqualTo(LlmModel.DEEPSEEK_V4_FLASH);
+        assertThat(registry.resolve("deepseek_flash")).isEqualTo(LlmModel.DEEPSEEK_FLASH);
         assertThat(registry.resolve("DEEPSEEK_V4_PRO")).isEqualTo(LlmModel.DEEPSEEK_V4_PRO);
     }
 

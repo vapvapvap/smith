@@ -63,7 +63,7 @@ Apache HttpClient5 5.6.4 (httpcore5 5.4.3).
 ### 4.3 DeepSeek API
 
 - `base_url = https://api.deepseek.com`, `POST /chat/completions` (OpenAI-совместимо).
-- Модели (2026): `deepseek-v4-flash`, `deepseek-v4-pro`, `deepseek-v4-flash-vision-exp`.
+- Модели (2026): `deepseek-flash` (V4.1 Flash, vision), `deepseek-v4-pro`.
 - `top_k` **не поддерживается**; `presence_penalty` и `frequency_penalty` — **deprecated**.
 - Есть специфичные: `thinking{type: enabled|disabled}` (default enabled) и
   `reasoning_effort{low|high|max}` (default high).
@@ -170,7 +170,7 @@ Apache HttpClient5 5.6.4 (httpcore5 5.4.3).
   значения `<= 0` не отправляются, при вводе 0 показывается тост.
 
 ### Вложения / vision (2026-09-12)
-- `LlmModel` получил флаг `supportsVision` (`DEEPSEEK_V4_FLASH_VISION_EXP` = true).
+- `LlmModel` получил флаг `supportsVision` (`DEEPSEEK_FLASH` = true).
 - `ChatModelDto` отдаёт `vision` в `GET /api/v1/models`.
 - `ChatCompletionRequest.attachments` (`[{name, mime_type, data}]`, до 10) ->
   domain `Attachment` (record с `isImage()`/`dataUri()`).
@@ -183,8 +183,8 @@ Apache HttpClient5 5.6.4 (httpcore5 5.4.3).
 - Вложения в `chat_request` НЕ сохраняются (сохраняется только `prompt`).
 
 ### Проверка e2e (локально, профиль `local`)
-- `GET /api/v1/models` — 3 модели (алиас + имя провайдера).
-- `POST /chat/completions` — реальный ответ DeepSeek (DEEPSEEK_V4_FLASH),
+- `GET /api/v1/models` — 2 модели (алиас + имя провайдера).
+- `POST /chat/completions` — реальный ответ DeepSeek (DEEPSEEK_FLASH),
   кириллица корректна, запись попадает в `chat_request`.
 - `POST /chat/completions/stream` — SSE: события `chunk`/`usage`/`done`.
 - Неизвестная модель и пустой prompt -> `400` с JSON-телом ошибки.

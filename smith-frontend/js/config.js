@@ -1,4 +1,4 @@
-const DEFAULT_BACKEND_PORT = 3616;
+const DEFAULT_BACKEND_PORT = 8080;
 
 function defaultBaseUrl() {
     const { protocol, hostname } = window.location;

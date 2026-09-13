@@ -45,7 +45,7 @@ springdoc-openapi 3.1.1.
 - `top_k`, `presence_penalty`, `frequency_penalty` принимаются в DTO, но НЕ
   передаются в DeepSeek (не поддерживаются).
 - Вложения (`attachments`, только изображения) передаются base64 в JSON запроса
-  и уходят в vision-модель (`DEEPSEEK_V4_FLASH_VISION_EXP`) как `image_url`
+  и уходят в vision-модель (`DEEPSEEK_FLASH`) как `image_url`
   (data URI). `GET /api/v1/models` возвращает флаг `vision`. Не-image вложение
   или не-vision модель -> `400`.
 - Режимы ответа: `stream=false` -> JSON, `stream=true` -> SSE (`SseEmitter`).

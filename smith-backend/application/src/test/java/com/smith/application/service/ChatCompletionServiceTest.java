@@ -41,7 +41,7 @@ class ChatCompletionServiceTest {
     void appliesDefaultGenerationParamsAndMapsResponse() {
         ChatCompletion completion = new ChatCompletion(
                 "resp-1",
-                ModelName.of(LlmModel.DEEPSEEK_V4_FLASH),
+                ModelName.of(LlmModel.DEEPSEEK_FLASH),
                 "content",
                 "reasoning",
                 FinishReason.STOP,
@@ -51,13 +51,13 @@ class ChatCompletionServiceTest {
 
         ChatCompletionRequest request = new ChatCompletionRequest();
         request.setPrompt("Hello");
-        request.setModel("DEEPSEEK_V4_FLASH");
+        request.setModel("DEEPSEEK_FLASH");
         request.setSystemPrompt("Ты — полезный ассистент");
 
         ChatCompletionResponse response = service.complete(request);
 
         assertThat(response.getId()).isEqualTo("resp-1");
-        assertThat(response.getModel()).isEqualTo("deepseek-v4-flash");
+        assertThat(response.getModel()).isEqualTo("deepseek-flash");
         assertThat(response.getContent()).isEqualTo("content");
         assertThat(response.getReasoningContent()).isEqualTo("reasoning");
         assertThat(response.getFinishReason()).isEqualTo("STOP");
@@ -67,7 +67,7 @@ class ChatCompletionServiceTest {
         ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
         verify(provider).complete(captor.capture());
         ChatRequest built = captor.getValue();
-        assertThat(built.model().value()).isEqualTo("deepseek-v4-flash");
+        assertThat(built.model().value()).isEqualTo("deepseek-flash");
         assertThat(built.prompt().value()).isEqualTo("Hello");
         assertThat(built.systemPrompt()).isEqualTo("Ты — полезный ассистент");
         assertThat(built.params().temperature()).isEqualTo(1.0);
@@ -80,12 +80,12 @@ class ChatCompletionServiceTest {
     @Test
     void persistsCompletedRecord() {
         when(provider.complete(any(ChatRequest.class))).thenReturn(new ChatCompletion(
-                "resp-1", ModelName.of(LlmModel.DEEPSEEK_V4_FLASH), "c", null,
+                "resp-1", ModelName.of(LlmModel.DEEPSEEK_FLASH), "c", null,
                 FinishReason.STOP, new Usage(1, 2, 3), Instant.now()));
 
         ChatCompletionRequest request = new ChatCompletionRequest();
         request.setPrompt("Hello");
-        request.setModel("DEEPSEEK_V4_FLASH");
+        request.setModel("DEEPSEEK_FLASH");
 
         service.complete(request);
 
@@ -98,12 +98,12 @@ class ChatCompletionServiceTest {
     @Test
     void mapsImageAttachmentsForVisionModel() {
         when(provider.complete(any(ChatRequest.class))).thenReturn(new ChatCompletion(
-                "resp-1", ModelName.of(LlmModel.DEEPSEEK_V4_FLASH_VISION_EXP), "c", null,
+                "resp-1", ModelName.of(LlmModel.DEEPSEEK_FLASH), "c", null,
                 FinishReason.STOP, new Usage(1, 2, 3), Instant.now()));
 
         ChatCompletionRequest request = new ChatCompletionRequest();
         request.setPrompt("Что на картинке?");
-        request.setModel("DEEPSEEK_V4_FLASH_VISION_EXP");
+        request.setModel("DEEPSEEK_FLASH");
         AttachmentDto attachment = new AttachmentDto();
         attachment.setName("photo.png");
         attachment.setMimeType("image/png");
@@ -124,7 +124,7 @@ class ChatCompletionServiceTest {
     void rejectsImageAttachmentForNonVisionModel() {
         ChatCompletionRequest request = new ChatCompletionRequest();
         request.setPrompt("Что на картинке?");
-        request.setModel("DEEPSEEK_V4_FLASH");
+        request.setModel("DEEPSEEK_V4_PRO");
         AttachmentDto attachment = new AttachmentDto();
         attachment.setName("photo.png");
         attachment.setMimeType("image/png");
@@ -139,7 +139,7 @@ class ChatCompletionServiceTest {
     void rejectsNonImageAttachment() {
         ChatCompletionRequest request = new ChatCompletionRequest();
         request.setPrompt("Прочитай файл");
-        request.setModel("DEEPSEEK_V4_FLASH_VISION_EXP");
+        request.setModel("DEEPSEEK_FLASH");
         AttachmentDto attachment = new AttachmentDto();
         attachment.setName("notes.txt");
         attachment.setMimeType("text/plain");

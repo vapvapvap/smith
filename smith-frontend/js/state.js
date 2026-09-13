@@ -3,7 +3,7 @@ const MESSAGES_KEY = 'smith.messages';
 const THEME_KEY = 'smith.theme';
 
 export const defaultSettings = {
-    model: 'DEEPSEEK_V4_FLASH',
+    model: 'DEEPSEEK_FLASH',
     context: false,
     temperature: '',
     top_p: '',

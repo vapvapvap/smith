@@ -37,7 +37,7 @@
   (`smith.baseUrl`).
 - **Тема** — атрибут `data-theme` на `<html>` + CSS-переменные в `base.css`;
   по умолчанию учитывается `prefers-color-scheme`.
-- **Модель по умолчанию — `DEEPSEEK_V4_FLASH`**; список моделей сортируется по
+- **Модель по умолчанию — `DEEPSEEK_FLASH`**; список моделей сортируется по
   `alias`, поэтому FLASH идёт первым.
 - **CORS в бэкенде** (`CorsConfig` + `app.cors.allowed-origins`), не прокси.
 - **Адрес бэкенда — от хоста страницы** (`defaultBaseUrl()` в `config.js`:
@@ -141,7 +141,7 @@ chrome.exe --headless=new --disable-gpu --no-sandbox --no-first-run \
   `app.cors.allowed-origins` в `application.yml`.
 - Блок «Параметры генерации» при раскрытии разворачивается полностью по высоте
   без внутренней прокрутки; прокрутка общая у сайдбара (`.sidebar__body`).
-- Модель по умолчанию `DEEPSEEK_V4_FLASH`, список сортируется по `alias`.
+- Модель по умолчанию `DEEPSEEK_FLASH`, список сортируется по `alias`.
 - Системный промпт: поле `#system-prompt` (textarea, Enter — перенос строки)
   отдельным блоком под «Параметрами генерации»; растягивается до низа сайдбара,
   но не менее 150px (`.field--grow`); значение в `state.settings.systemPrompt`,

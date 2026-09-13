@@ -91,8 +91,7 @@ httpclient5            = { module = "org.apache.httpcomponents.client5:httpclien
 ```java
 enum LlmModel {
     DEEPSEEK_V4_PRO("deepseek-v4-pro"),
-    DEEPSEEK_V4_FLASH("deepseek-v4-flash"),
-    DEEPSEEK_V4_FLASH_VISION_EXP("deepseek-v4-flash-vision-exp");
+    DEEPSEEK_FLASH("deepseek-flash");
 }
 ```
 

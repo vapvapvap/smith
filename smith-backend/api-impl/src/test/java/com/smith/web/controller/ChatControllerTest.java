@@ -65,7 +65,7 @@ class ChatControllerTest {
     void syncCompletionReturnsJson() throws Exception {
         ChatCompletionResponse response = new ChatCompletionResponse();
         response.setId("resp-1");
-        response.setModel("deepseek-v4-flash");
+        response.setModel("deepseek-flash");
         response.setContent("Привет");
         response.setFinishReason(FinishReason.STOP.name());
         response.setCreatedAt(Instant.parse("2026-01-01T00:00:00Z"));
@@ -73,10 +73,10 @@ class ChatControllerTest {
 
         mvc.perform(post("/api/v1/chat/completions")
                         .contentType(JSON_UTF8)
-                        .content("{\"prompt\":\"привет\",\"model\":\"DEEPSEEK_V4_FLASH\"}"))
+                        .content("{\"prompt\":\"привет\",\"model\":\"DEEPSEEK_FLASH\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("resp-1"))
-                .andExpect(jsonPath("$.model").value("deepseek-v4-flash"))
+                .andExpect(jsonPath("$.model").value("deepseek-flash"))
                 .andExpect(jsonPath("$.content").value("Привет"))
                 .andExpect(jsonPath("$.finishReason").value("STOP"));
     }
@@ -98,7 +98,7 @@ class ChatControllerTest {
     void validationErrorReturns400() throws Exception {
         mvc.perform(post("/api/v1/chat/completions")
                         .contentType(JSON_UTF8)
-                        .content("{\"prompt\":\"\",\"model\":\"DEEPSEEK_V4_FLASH\"}"))
+                        .content("{\"prompt\":\"\",\"model\":\"DEEPSEEK_FLASH\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation failed"));
     }
@@ -106,12 +106,12 @@ class ChatControllerTest {
     @Test
     void modelsReturnsList() throws Exception {
         when(modelInfoService.availableModels())
-                .thenReturn(List.of(new ChatModelDto("DEEPSEEK_V4_FLASH", "deepseek-v4-flash", false)));
+                .thenReturn(List.of(new ChatModelDto("DEEPSEEK_FLASH", "deepseek-flash", true)));
 
         mvc.perform(get("/api/v1/models"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].alias").value("DEEPSEEK_V4_FLASH"))
-                .andExpect(jsonPath("$[0].providerName").value("deepseek-v4-flash"));
+                .andExpect(jsonPath("$[0].alias").value("DEEPSEEK_FLASH"))
+                .andExpect(jsonPath("$[0].providerName").value("deepseek-flash"));
     }
 
     @Test
@@ -126,7 +126,7 @@ class ChatControllerTest {
 
         MvcResult mvcResult = mvc.perform(post("/api/v1/chat/completions/stream")
                         .contentType(JSON_UTF8)
-                        .content("{\"prompt\":\"привет\",\"model\":\"DEEPSEEK_V4_FLASH\"}"))
+                        .content("{\"prompt\":\"привет\",\"model\":\"DEEPSEEK_FLASH\"}"))
                 .andExpect(request().asyncStarted())
                 .andReturn();
 

@@ -80,7 +80,7 @@ curl -b cookies.txt -X POST http://localhost:8080/api/auth/logout
 ```bash
 curl -X POST http://localhost:8080/api/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d '{"prompt":"Расскажи анекдот","model":"DEEPSEEK_V4_FLASH"}'
+  -d '{"prompt":"Расскажи анекдот","model":"DEEPSEEK_FLASH"}'
 ```
 
 ### POST /api/v1/chat/completions/stream — ответ потоком (SSE)
@@ -88,7 +88,7 @@ curl -X POST http://localhost:8080/api/v1/chat/completions \
 ```bash
 curl -N -X POST http://localhost:8080/api/v1/chat/completions/stream \
   -H "Content-Type: application/json" \
-  -d '{"prompt":"Посчитай от 1 до 5","model":"DEEPSEEK_V4_FLASH"}'
+  -d '{"prompt":"Посчитай от 1 до 5","model":"DEEPSEEK_FLASH"}'
 ```
 
 События: `chunk` (content/reasoningContent), `usage`, `done` (finishReason),
@@ -125,8 +125,7 @@ curl http://localhost:8080/api/v1/models
 | Алиас | Имя у провайдера |
 |---|---|
 | `DEEPSEEK_V4_PRO` | `deepseek-v4-pro` |
-| `DEEPSEEK_V4_FLASH` | `deepseek-v4-flash` |
-| `DEEPSEEK_V4_FLASH_VISION_EXP` | `deepseek-v4-flash-vision-exp` |
+| `DEEPSEEK_FLASH` | `deepseek-flash` |
 
 ## Коды ошибок
 

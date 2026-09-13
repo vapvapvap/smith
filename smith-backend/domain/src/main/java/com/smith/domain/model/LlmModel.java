@@ -3,8 +3,7 @@ package com.smith.domain.model;
 public enum LlmModel {
 
     DEEPSEEK_V4_PRO("deepseek-v4-pro", false),
-    DEEPSEEK_V4_FLASH("deepseek-v4-flash", false),
-    DEEPSEEK_V4_FLASH_VISION_EXP("deepseek-v4-flash-vision-exp", true);
+    DEEPSEEK_FLASH("deepseek-flash", true);
 
     private final String providerName;
     private final boolean supportsVision;

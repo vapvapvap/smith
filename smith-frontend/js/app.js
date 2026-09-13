@@ -4,6 +4,7 @@ import { CONTEXT_CHAR_LIMIT } from './config.js';
 import { MessageView } from './render.js';
 import {
     state,
+    defaultSettings,
     newId,
     loadState,
     persistSettings,
@@ -139,7 +140,10 @@ function populateModels() {
     }
     const known = state.models.some((m) => m.alias === state.settings.model);
     if (!known && models.length > 0) {
-        state.settings.model = models[0].alias;
+        const preferred = state.models.some((m) => m.alias === defaultSettings.model)
+            ? defaultSettings.model
+            : models[0].alias;
+        state.settings.model = preferred;
         persistSettings();
     }
     dom.model.value = state.settings.model;
