@@ -61,6 +61,11 @@ smith-frontend/
   читается вручную из `response.body.getReader()` и разбирается в `api.js`.
 - События SSE: `chunk` (`{content, reasoningContent}`), `usage`, `done`
   (`{finishReason}`), `error` (`{message}`).
+- Панель статистики токенов (`#token-stats`) под лентой диалога: «текущий запрос»
+  (promptTokens последнего ответа), «история диалога» (сумма prompt+completion
+  по всем ответам за сессию), «ответ модели» (completionTokens последнего
+  ответа). Расчёт в `updateTokenStats()` (app.js), обновляется по `usage` и
+  восстанавливается из `localStorage` (usage сохраняется в сообщении).
 - Ключи тела запроса — snake_case там, где так у бэкенда: `top_p`, `top_k`,
   `max_tokens`, `presence_penalty`, `frequency_penalty`, `reasoning_effort`,
   `system_prompt`.

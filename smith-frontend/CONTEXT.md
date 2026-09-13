@@ -158,6 +158,15 @@ chrome.exe --headless=new --disable-gpu --no-sandbox --no-first-run \
   `min=0.01`, `step=0.01`; в `buildPayload` значения `<= 0` не отправляются,
   при вводе 0 — тост «Top P должен быть больше 0».
 
+### Статистика токенов под диалогом (2026-09-13)
+- Панель `#token-stats` между лентой сообщений и composer: «Текущий запрос»
+  (`promptTokens` последнего ответа), «История диалога» (сумма
+  `promptTokens + completionTokens` по всем ответам за сессию), «Ответ модели»
+  (`completionTokens` последнего ответа). Расчёт — `updateTokenStats()` в
+  `app.js`; вызывается по SSE-событию `usage`, в `finally` блока `send` и в
+  `renderMessages()` (в т.ч. при загрузке из `localStorage` — `usage` уже
+  персистится в сообщении). Панель скрыта (`hidden`), пока нет ни одного `usage`.
+
 ### Вложения (скрепка + drag-n-drop + vision)
 - `js/attachments.js` — состояние вложений в памяти, классификация
   (image / text / unsupported), чтение через `FileReader` (dataURL для картинок,

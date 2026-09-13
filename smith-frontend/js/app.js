@@ -23,6 +23,10 @@ const dom = {
     messages: el('messages'),
     messagesList: el('messages-list'),
     emptyState: el('empty-state'),
+    tokenStats: el('token-stats'),
+    statPrompt: el('stat-prompt'),
+    statHistory: el('stat-history'),
+    statCompletion: el('stat-completion'),
     composer: el('composer'),
     prompt: el('prompt'),
     systemPrompt: el('system-prompt'),
@@ -84,6 +88,28 @@ function syncEmptyState() {
     dom.emptyState.hidden = state.messages.length > 0;
 }
 
+function updateTokenStats() {
+    const usages = state.messages
+        .filter((m) => m.role === 'assistant' && m.usage)
+        .map((m) => m.usage);
+
+    if (usages.length === 0) {
+        dom.tokenStats.hidden = true;
+        return;
+    }
+
+    const last = usages[usages.length - 1];
+    const history = usages.reduce((sum, usage) => {
+        const total = (usage.promptTokens ?? 0) + (usage.completionTokens ?? 0);
+        return sum + total;
+    }, 0);
+
+    dom.statPrompt.textContent = last.promptTokens ?? '—';
+    dom.statHistory.textContent = history;
+    dom.statCompletion.textContent = last.completionTokens ?? '—';
+    dom.tokenStats.hidden = false;
+}
+
 function appendMessageView(message) {
     const view = new MessageView(message);
     views.set(message.id, view);
@@ -115,6 +141,7 @@ function renderMessages() {
     }
     syncEmptyState();
     scrollToBottom();
+    updateTokenStats();
 }
 
 function applySettingsToInputs() {
@@ -301,6 +328,7 @@ async function send() {
             onUsage: (data) => {
                 assistantMessage.usage = data;
                 updateMessageView(assistantMessage, true);
+                updateTokenStats();
             },
             onDone: (data) => {
                 assistantMessage.finishReason = data?.finishReason;
@@ -322,6 +350,7 @@ async function send() {
         assistantMessage.pending = false;
         updateMessageView(assistantMessage);
         persistMessages();
+        updateTokenStats();
         setStreaming(false);
     }
 }
