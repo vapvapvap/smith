@@ -3,6 +3,8 @@ package com.smith.application.service;
 import com.smith.api.dto.AttachmentDto;
 import com.smith.api.dto.ChatCompletionRequest;
 import com.smith.api.dto.ChatCompletionResponse;
+import com.smith.api.dto.FactsRequest;
+import com.smith.api.dto.FactsResponse;
 import com.smith.api.dto.ReasoningEffort;
 import com.smith.api.dto.SummarizeRequest;
 import com.smith.api.dto.SummarizeResponse;
@@ -40,6 +42,14 @@ public class ChatCompletionService {
             приведённого диалога. Сохрани ключевые факты, имена, числа, принятые решения,
             договорённости и незавершённые задачи. Не добавляй новых сведений и не давай
             оценок. Пиши на языке диалога.""";
+    private static final String FACTS_SYSTEM_PROMPT = """
+            Ты — система ведения key-value памяти диалога. Обнови набор фактов по новым
+            сообщениям диалога. В фактах должны быть важные сведения: цель, ограничения,
+            предпочтения, принятые решения и договорённости. Формат ответа — строго по
+            одному факту на строку: «ключ: значение». Сохрани ВСЕ актуальные факты из
+            предыдущего набора (если они не отменены), обнови изменившиеся, добавь новые
+            и удали только устаревшие. Не задавай вопросов, не предлагай следующие шаги,
+            не добавляй статусов, пояснений, заголовков и markdown. Пиши на языке диалога.""";
 
     private final LlmProvider llmProvider;
     private final ChatRequestRepository repository;
@@ -139,6 +149,38 @@ public class ChatCompletionService {
                 completion.usage().completionTokens(),
                 completion.usage().totalTokens());
         return new SummarizeResponse(completion.content(), usage);
+    }
+
+    public FactsResponse facts(FactsRequest request) {
+        LlmModel model = modelRegistry.resolve(request.getModel());
+        GenerationParams params = new GenerationParams(
+                DEFAULT_TEMPERATURE,
+                DEFAULT_TOP_P,
+                null,
+                DEFAULT_PENALTY,
+                DEFAULT_PENALTY,
+                null,
+                null,
+                com.smith.domain.model.ThinkingMode.DISABLED,
+                com.smith.domain.model.ReasoningEffort.HIGH);
+        StringBuilder text = new StringBuilder();
+        if (request.getFacts() != null && !request.getFacts().isBlank()) {
+            text.append("Текущие факты:\n").append(request.getFacts()).append("\n\n");
+        }
+        text.append("Новые сообщения диалога:\n").append(request.getText());
+        ChatRequest chatRequest = ChatRequest.of(
+                new Prompt(text.toString()),
+                ModelName.of(model),
+                params,
+                false,
+                FACTS_SYSTEM_PROMPT,
+                List.of());
+        ChatCompletion completion = llmProvider.complete(chatRequest);
+        UsageDto usage = completion.usage() == null ? null : new UsageDto(
+                completion.usage().promptTokens(),
+                completion.usage().completionTokens(),
+                completion.usage().totalTokens());
+        return new FactsResponse(completion.content(), usage);
     }
 
     private ChatRequest buildChatRequest(ChatCompletionRequest request) {

@@ -3,6 +3,8 @@ package com.smith.web.controller;
 import com.smith.api.dto.ChatCompletionRequest;
 import com.smith.api.dto.ChatCompletionResponse;
 import com.smith.api.dto.ChatModelDto;
+import com.smith.api.dto.FactsRequest;
+import com.smith.api.dto.FactsResponse;
 import com.smith.api.dto.SummarizeRequest;
 import com.smith.api.dto.SummarizeResponse;
 import com.smith.api.dto.UsageDto;
@@ -122,6 +124,28 @@ class ChatControllerTest {
     @Test
     void summarizeValidationErrorReturns400() throws Exception {
         mvc.perform(post("/api/v1/chat/summarize")
+                        .contentType(JSON_UTF8)
+                        .content("{\"text\":\"\",\"model\":\"DEEPSEEK_FLASH\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation failed"));
+    }
+
+    @Test
+    void factsReturnsJson() throws Exception {
+        when(completionService.facts(any(FactsRequest.class)))
+                .thenReturn(new FactsResponse("цель: собрать ТЗ", new UsageDto(5, 6, 11)));
+
+        mvc.perform(post("/api/v1/chat/facts")
+                        .contentType(JSON_UTF8)
+                        .content("{\"text\":\"диалог\",\"facts\":\"цель: X\",\"model\":\"DEEPSEEK_FLASH\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.facts").value("цель: собрать ТЗ"))
+                .andExpect(jsonPath("$.usage.totalTokens").value(11));
+    }
+
+    @Test
+    void factsValidationErrorReturns400() throws Exception {
+        mvc.perform(post("/api/v1/chat/facts")
                         .contentType(JSON_UTF8)
                         .content("{\"text\":\"\",\"model\":\"DEEPSEEK_FLASH\"}"))
                 .andExpect(status().isBadRequest())
