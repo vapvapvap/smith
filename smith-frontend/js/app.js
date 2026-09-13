@@ -18,6 +18,7 @@ import {
     resetFacts,
     switchBranch,
     forkBranchAt,
+    activeBranch,
     factsToText,
     parseFactsText,
     isDialogMessage,
@@ -36,6 +37,9 @@ const dom = {
     factsPanel: el('facts-panel'),
     factsList: el('facts-list'),
     branchSwitcher: el('branch-switcher'),
+    branchesPanel: el('branches-panel'),
+    branchesList: el('branches-list'),
+    forkBranch: el('fork-branch'),
     newChat: el('new-chat'),
     clearChat: el('clear-chat'),
     messages: el('messages'),
@@ -217,17 +221,44 @@ function renderFacts() {
 }
 
 function renderBranches() {
-    if (!dom.branchSwitcher) {
+    if (dom.branchSwitcher) {
+        dom.branchSwitcher.replaceChildren();
+        for (const branch of state.branches) {
+            const option = document.createElement('option');
+            option.value = branch.id;
+            option.textContent = branch.name;
+            dom.branchSwitcher.append(option);
+        }
+        dom.branchSwitcher.value = state.activeBranchId;
+    }
+
+    if (!dom.branchesList) {
         return;
     }
-    dom.branchSwitcher.replaceChildren();
-    for (const branch of state.branches) {
-        const option = document.createElement('option');
-        option.value = branch.id;
-        option.textContent = branch.name;
-        dom.branchSwitcher.append(option);
+    dom.branchesList.replaceChildren();
+    if (state.branches.length === 0) {
+        const empty = document.createElement('span');
+        empty.className = 'branches__empty';
+        empty.textContent = 'Веток пока нет';
+        dom.branchesList.append(empty);
+    } else {
+        for (const branch of state.branches) {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'branches__item';
+            item.dataset.branchId = branch.id;
+            if (branch.id === state.activeBranchId) {
+                item.classList.add('branches__item--active');
+            }
+            item.textContent = branch.name;
+            dom.branchesList.append(item);
+        }
     }
-    dom.branchSwitcher.value = state.activeBranchId;
+
+    const lastId = activeBranch()?.messages.at(-1)?.id;
+    if (dom.forkBranch) {
+        dom.forkBranch.disabled = !lastId;
+    }
 }
 
 function updateContextControls() {
@@ -242,6 +273,7 @@ function updateContextControls() {
     dom.summaryIntervalCtl.hidden = !(contextOn && strategy === CONTEXT_STRATEGIES.SUMMARIZE);
     dom.factsPanel.hidden = !(contextOn && strategy === CONTEXT_STRATEGIES.STICKY_FACTS);
     dom.branchSwitcher.hidden = !(contextOn && strategy === CONTEXT_STRATEGIES.BRANCHING);
+    dom.branchesPanel.hidden = !(contextOn && strategy === CONTEXT_STRATEGIES.BRANCHING);
 
     document.documentElement.dataset.strategy = contextOn ? strategy : 'off';
     renderFacts();
@@ -736,7 +768,32 @@ function bindEvents() {
     dom.branchSwitcher.addEventListener('change', () => {
         if (switchBranch(dom.branchSwitcher.value)) {
             renderMessages();
+            renderBranches();
             updateTokenStats();
+        }
+    });
+
+    dom.branchesList.addEventListener('click', (event) => {
+        const item = event.target.closest('.branches__item');
+        if (!item) {
+            return;
+        }
+        if (switchBranch(item.dataset.branchId)) {
+            renderMessages();
+            renderBranches();
+            updateTokenStats();
+        }
+    });
+
+    dom.forkBranch.addEventListener('click', () => {
+        const lastId = activeBranch()?.messages.at(-1)?.id;
+        if (!lastId) {
+            return;
+        }
+        const branch = forkBranchAt(lastId);
+        if (branch) {
+            renderBranches();
+            showToast(`Создана «${branch.name}» от последнего сообщения`);
         }
     });
 

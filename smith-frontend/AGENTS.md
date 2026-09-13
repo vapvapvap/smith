@@ -105,14 +105,23 @@ smith-frontend/
   messages}]`) + `state.activeBranchId` (`localStorage['smith.branches']`;
   миграция из старого `smith.messages`). Кнопка `.msg__fork` у сообщения (видна
   при `data-strategy="branching"`) вызывает `forkBranchAt(id)` — создаёт ветку
-  с копией сообщений до checkpoint. `#branch-switcher` в шапке чата переключает
-  ветки (`switchBranch` + перерисовка). `state.messages` — ссылка на активную
-  ветку.
+  с копией сообщений до checkpoint. `#branch-switcher` в шапке чата и блок
+  `#branches-panel` в сайдбаре (список `#branches-list` + кнопка `#fork-branch`,
+  разветвляет от последнего сообщения активной ветки) переключают ветки
+  (`switchBranch` + перерисовка). `state.messages` — ссылка на активную ветку.
+- Показ полей по стратегии — `updateContextControls()` (app.js): `as_is` — ничего;
+  `sliding_window` — `#sliding-window-ctl`; `sticky_facts` — `#sliding-window-ctl`
+  + `#facts-panel`; `branching` — `#branches-panel` + `#branch-switcher`;
+  `summarize` — `#summary-interval-ctl`.
 - Токены сервисных вызовов учитываются в панели `#token-stats`: пункт
   «Саммаризация» (`state.summary.usage`) и «Факты» (`state.factsUsage`) + входят
   в «Историю диалога».
 - Настройки, лента и тема хранятся в `localStorage` (`state.js`).
 - Тема — через атрибут `data-theme` на `<html>` и CSS-переменные.
+- `hidden` + `display:flex/grid`: в `base.css` есть
+  `[hidden] { display: none !important; }` — обязательно для скрытия блоков
+  стратегий/панелей (`element.hidden = true`), т.к. авторский `display` иначе
+  перебивает UA-правило `[hidden]`.
 - **Вложения:** кнопка-скрепка (`#attach`) и drag-n-drop (`js/attachments.js`).
   Изображения уходят в `attachments` запроса (`{name, mime_type, data}` base64) и
   автоматически переключают модель на vision (`model.vision === true` из
@@ -184,5 +193,9 @@ python -m http.server 8000 --bind 127.0.0.1
 
 Реализован полный клиент: модели, JSON и SSE, параметры генерации, контекст,
 темы, адаптив, `localStorage`, авторизация (страница входа, сессия, выход).
+Реализованы 5 стратегий управления контекстом (select `#context-strategy`):
+`as_is` (дефолт), `sliding_window`, `sticky_facts` (бэкенд `POST /chat/facts`),
+`branching` (ветки диалога), `summarize`. Результаты сравнения стратегий —
+`experiments/context-strategies/report.md`.
 Проверено вживую: `GET /api/v1/models`, CORS preflight, реальный SSE-поток
 DeepSeek; e2e входа/выхода через headless Chrome.

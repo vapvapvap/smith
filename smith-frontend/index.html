@@ -61,7 +61,7 @@
                 <section class="field field--strategy">
                     <label class="field__label" for="context-strategy">Стратегия управления контекстом <span class="hint" title="Как готовится контекст диалога перед отправкой в модель. Доступно только при включённом «Передавать контекст».">i</span></label>
                     <select class="input" id="context-strategy" disabled>
-                        <option value="as_is">Как есть (As is)</option>
+                        <option value="as_is" selected>Как есть (As is)</option>
                         <option value="sliding_window">Скользящее окно (Sliding Window)</option>
                         <option value="sticky_facts">Закреплённые факты (Sticky Facts)</option>
                         <option value="branching">Ветки диалога (Branching)</option>
@@ -84,6 +84,11 @@
                     <div class="facts" id="facts-panel" hidden>
                         <span class="field__label">Факты (ключ: значение)</span>
                         <div class="facts__list" id="facts-list"></div>
+                    </div>
+                    <div class="branches" id="branches-panel" hidden>
+                        <span class="field__label">Ветки диалога <span class="hint" title="Активная ветка подсвечена. «Разветвить» создаёт новую ветку от последнего сообщения активной ветки. Ветку также можно создать кнопкой у любого сообщения.">i</span></span>
+                        <div class="branches__list" id="branches-list"></div>
+                        <button type="button" class="btn btn--ghost btn--block" id="fork-branch">Разветвить</button>
                     </div>
                 </section>
 
