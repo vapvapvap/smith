@@ -49,6 +49,10 @@ springdoc-openapi 3.1.1.
   (data URI). `GET /api/v1/models` возвращает флаг `vision`. Не-image вложение
   или не-vision модель -> `400`.
 - Режимы ответа: `stream=false` -> JSON, `stream=true` -> SSE (`SseEmitter`).
+- Саммаризация контекста: `POST /api/v1/chat/summarize` (`{text, model}`) ->
+  `{summary, usage}`. Вызывает LLM с фиксированным системным промптом
+  саммаризации и `thinking=disabled`; НЕ пишет в `chat_request` (внутренняя
+  операция), возвращает `usage` для учёта расхода на клиенте.
 - Авторизация — session cookie (`JSESSIONID`) + Spring Security form login на
   `POST /api/auth/login` (`username`/`password`, `application/x-www-form-urlencoded`).
   Пользователи — таблица `app_user` (BCrypt-хэши), порт `UserRepository`,
@@ -77,7 +81,8 @@ springdoc-openapi 3.1.1.
   `$env:JAVA_HOME="C:\Program Files\Java\jdk-25.0.4"; .\gradlew.bat :api-impl:bootRun "--args=--spring.profiles.active=local"`
 - Проверка: Swagger `http://localhost:8080/swagger-ui.html`;
   модели `GET /api/v1/models`; sync `POST /api/v1/chat/completions`;
-  SSE `POST /api/v1/chat/completions/stream`.
+  SSE `POST /api/v1/chat/completions/stream`;
+  саммаризация `POST /api/v1/chat/summarize`.
 - Авторизация: `POST /api/auth/login` (form-urlencoded), `POST /api/auth/logout`,
   `GET /api/auth/me`. Пользователи: `vap`, `lex`, `max`, `heh`, `art`
   (пароли — BCrypt в `V4__seed_users.sql`, см. итоги сессии).

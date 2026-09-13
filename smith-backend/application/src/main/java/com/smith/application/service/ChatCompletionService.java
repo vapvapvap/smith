@@ -4,6 +4,8 @@ import com.smith.api.dto.AttachmentDto;
 import com.smith.api.dto.ChatCompletionRequest;
 import com.smith.api.dto.ChatCompletionResponse;
 import com.smith.api.dto.ReasoningEffort;
+import com.smith.api.dto.SummarizeRequest;
+import com.smith.api.dto.SummarizeResponse;
 import com.smith.api.dto.Thinking;
 import com.smith.api.dto.UsageDto;
 import com.smith.domain.exception.LlmProviderException;
@@ -33,6 +35,11 @@ public class ChatCompletionService {
     private static final double DEFAULT_TOP_P = 1.0;
     private static final double DEFAULT_PENALTY = 0.0;
     private static final boolean DEFAULT_STREAM = false;
+    private static final String SUMMARIZE_SYSTEM_PROMPT = """
+            Ты — система сжатия истории диалога. Составь краткое, но содержательное саммари
+            приведённого диалога. Сохрани ключевые факты, имена, числа, принятые решения,
+            договорённости и незавершённые задачи. Не добавляй новых сведений и не давай
+            оценок. Пиши на языке диалога.""";
 
     private final LlmProvider llmProvider;
     private final ChatRequestRepository repository;
@@ -105,6 +112,33 @@ public class ChatCompletionService {
                 listener.onError(error);
             }
         });
+    }
+
+    public SummarizeResponse summarize(SummarizeRequest request) {
+        LlmModel model = modelRegistry.resolve(request.getModel());
+        GenerationParams params = new GenerationParams(
+                DEFAULT_TEMPERATURE,
+                DEFAULT_TOP_P,
+                null,
+                DEFAULT_PENALTY,
+                DEFAULT_PENALTY,
+                null,
+                null,
+                com.smith.domain.model.ThinkingMode.DISABLED,
+                com.smith.domain.model.ReasoningEffort.HIGH);
+        ChatRequest chatRequest = ChatRequest.of(
+                new Prompt(request.getText()),
+                ModelName.of(model),
+                params,
+                false,
+                SUMMARIZE_SYSTEM_PROMPT,
+                List.of());
+        ChatCompletion completion = llmProvider.complete(chatRequest);
+        UsageDto usage = completion.usage() == null ? null : new UsageDto(
+                completion.usage().promptTokens(),
+                completion.usage().completionTokens(),
+                completion.usage().totalTokens());
+        return new SummarizeResponse(completion.content(), usage);
     }
 
     private ChatRequest buildChatRequest(ChatCompletionRequest request) {

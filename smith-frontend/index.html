@@ -58,6 +58,21 @@
                     </label>
                 </section>
 
+                <section class="field field--summary">
+                    <label class="switch">
+                        <input type="checkbox" id="summarize-toggle" disabled>
+                        <span class="switch__track"><span class="switch__thumb"></span></span>
+                        <span class="switch__text">Саммаризация контекста</span>
+                    </label>
+                    <label class="field field--compact">
+                        <span class="field__label">Каждые <span class="hint" title="Через сколько сообщений диалога (вопрос + ответ) сжимать контекст в саммари.">i</span></span>
+                        <div class="summary-interval">
+                            <input class="input" type="number" id="summary-interval" min="1" step="1" value="10" disabled>
+                            <span class="summary-interval__suffix">сообщений</span>
+                        </div>
+                    </label>
+                </section>
+
                 <details class="params" id="params">
                     <summary class="params__summary">
                         <span>Параметры генерации</span>
@@ -151,6 +166,7 @@
                 <span class="token-stats__item">Текущий запрос: <b id="stat-prompt">—</b></span>
                 <span class="token-stats__item">История диалога: <b id="stat-history">—</b></span>
                 <span class="token-stats__item">Ответ модели: <b id="stat-completion">—</b></span>
+                <span class="token-stats__item" id="stat-summary-item" hidden>Саммаризация: <b id="stat-summary">—</b></span>
             </div>
 
             <form class="composer" id="composer">

@@ -1,4 +1,4 @@
-import { fetchModels, streamCompletion, me, logout } from './api.js';
+import { fetchModels, streamCompletion, summarizeCompletion, me, logout } from './api.js';
 import { initAttachments } from './attachments.js';
 import { CONTEXT_CHAR_LIMIT } from './config.js';
 import { MessageView } from './render.js';
@@ -9,8 +9,11 @@ import {
     loadState,
     persistSettings,
     persistMessages,
+    persistSummary,
     persistTheme,
     resetMessages,
+    resetSummary,
+    isDialogMessage,
 } from './state.js';
 
 const el = (id) => document.getElementById(id);
@@ -18,6 +21,8 @@ const el = (id) => document.getElementById(id);
 const dom = {
     model: el('model'),
     context: el('context-toggle'),
+    summarize: el('summarize-toggle'),
+    summaryInterval: el('summary-interval'),
     newChat: el('new-chat'),
     clearChat: el('clear-chat'),
     messages: el('messages'),
@@ -27,6 +32,8 @@ const dom = {
     statPrompt: el('stat-prompt'),
     statHistory: el('stat-history'),
     statCompletion: el('stat-completion'),
+    statSummary: el('stat-summary'),
+    statSummaryItem: el('stat-summary-item'),
     composer: el('composer'),
     prompt: el('prompt'),
     systemPrompt: el('system-prompt'),
@@ -93,7 +100,12 @@ function updateTokenStats() {
         .filter((m) => m.role === 'assistant' && m.usage)
         .map((m) => m.usage);
 
-    if (usages.length === 0) {
+    const summaryUsage = state.summary.usage;
+    const summaryTotal = summaryUsage
+        ? (summaryUsage.promptTokens ?? 0) + (summaryUsage.completionTokens ?? 0)
+        : 0;
+
+    if (usages.length === 0 && summaryTotal === 0) {
         dom.tokenStats.hidden = true;
         return;
     }
@@ -102,11 +114,19 @@ function updateTokenStats() {
     const history = usages.reduce((sum, usage) => {
         const total = (usage.promptTokens ?? 0) + (usage.completionTokens ?? 0);
         return sum + total;
-    }, 0);
+    }, summaryTotal);
 
-    dom.statPrompt.textContent = last.promptTokens ?? '—';
+    dom.statPrompt.textContent = last ? (last.promptTokens ?? '—') : '—';
     dom.statHistory.textContent = history;
-    dom.statCompletion.textContent = last.completionTokens ?? '—';
+    dom.statCompletion.textContent = last ? (last.completionTokens ?? '—') : '—';
+
+    if (summaryUsage) {
+        dom.statSummaryItem.hidden = false;
+        dom.statSummary.textContent = summaryTotal;
+    } else {
+        dom.statSummaryItem.hidden = true;
+    }
+
     dom.tokenStats.hidden = false;
 }
 
@@ -144,9 +164,17 @@ function renderMessages() {
     updateTokenStats();
 }
 
+function updateSummaryControls() {
+    const contextOn = dom.context.checked;
+    dom.summarize.disabled = !contextOn;
+    dom.summaryInterval.disabled = !(contextOn && dom.summarize.checked);
+}
+
 function applySettingsToInputs() {
     const s = state.settings;
     dom.context.checked = !!s.context;
+    dom.summarize.checked = !!s.summarize;
+    dom.summaryInterval.value = s.summaryInterval ?? defaultSettings.summaryInterval;
     el('thinking').value = s.thinking;
     el('reasoning_effort').value = s.reasoning_effort;
     el('stop').value = s.stop;
@@ -154,6 +182,7 @@ function applySettingsToInputs() {
     for (const key of numberFields) {
         el(key).value = s[key] ?? '';
     }
+    updateSummaryControls();
 }
 
 function populateModels() {
@@ -199,18 +228,34 @@ function parseStop(raw) {
         .slice(0, 16);
 }
 
-function buildPrompt(history, current) {
-    if (!state.settings.context) {
-        return current;
-    }
+function dialogContentLines(messages) {
     const lines = [];
-    for (const message of history) {
+    for (const message of messages) {
         if (message.role === 'user' && message.content) {
             lines.push(`Пользователь: ${message.content}`);
         } else if (message.role === 'assistant' && message.content && !message.error) {
             lines.push(`Ассистент: ${message.content}`);
         }
     }
+    return lines;
+}
+
+function summaryInterval() {
+    const value = Math.floor(Number(state.settings.summaryInterval));
+    return Number.isFinite(value) && value >= 1 ? value : defaultSettings.summaryInterval;
+}
+
+function buildPrompt(history, current) {
+    if (!state.settings.context) {
+        return current;
+    }
+    const lines = [];
+    let source = history;
+    if (state.settings.summarize && state.summary.text) {
+        lines.push(`Саммари предыдущего диалога:\n${state.summary.text}`);
+        source = history.filter(isDialogMessage).slice(state.summary.coveredCount);
+    }
+    lines.push(...dialogContentLines(source));
     lines.push(`Пользователь: ${current}`);
 
     let text = lines.join('\n\n');
@@ -219,6 +264,69 @@ function buildPrompt(history, current) {
         text = lines.join('\n\n');
     }
     return text;
+}
+
+function accumulateUsage(total, usage) {
+    if (!usage) {
+        return total;
+    }
+    return {
+        promptTokens: (total?.promptTokens || 0) + (usage.promptTokens || 0),
+        completionTokens: (total?.completionTokens || 0) + (usage.completionTokens || 0),
+        totalTokens: (total?.totalTokens || 0) + (usage.totalTokens || 0),
+    };
+}
+
+async function maybeSummarize() {
+    const s = state.settings;
+    if (!s.context || !s.summarize || state.summarizing) {
+        return;
+    }
+    const dialog = state.messages.filter(isDialogMessage);
+    const uncovered = dialog.slice(state.summary.coveredCount);
+    if (uncovered.length < summaryInterval()) {
+        return;
+    }
+
+    const lines = [];
+    if (state.summary.text) {
+        lines.push(`Предыдущее саммари:\n${state.summary.text}`);
+    }
+    lines.push(...dialogContentLines(uncovered));
+    const text = lines.join('\n\n');
+
+    const systemMessage = {
+        id: newId(),
+        role: 'system',
+        content: '',
+        pending: true,
+    };
+    state.messages.push(systemMessage);
+    appendMessageView(systemMessage);
+    persistMessages();
+
+    state.summarizing = true;
+    try {
+        const result = await summarizeCompletion({ text, model: s.model });
+        systemMessage.content = result?.summary || '';
+        systemMessage.pending = false;
+        systemMessage.usage = result?.usage || null;
+        state.summary = {
+            text: result?.summary || '',
+            coveredCount: dialog.length,
+            usage: accumulateUsage(state.summary.usage, result?.usage),
+        };
+        persistSummary();
+    } catch (error) {
+        systemMessage.pending = false;
+        systemMessage.error = true;
+        systemMessage.content = `Не удалось саммаризировать контекст: ${error.message}`;
+    } finally {
+        state.summarizing = false;
+        updateMessageView(systemMessage);
+        persistMessages();
+        updateTokenStats();
+    }
 }
 
 function buildPayload(prompt, model, images) {
@@ -352,6 +460,7 @@ async function send() {
         persistMessages();
         updateTokenStats();
         setStreaming(false);
+        maybeSummarize();
     }
 }
 
@@ -377,6 +486,25 @@ function closeSidebar() {
 function bindSettings() {
     dom.context.addEventListener('change', () => {
         state.settings.context = dom.context.checked;
+        persistSettings();
+        updateSummaryControls();
+    });
+    dom.summarize.addEventListener('change', () => {
+        state.settings.summarize = dom.summarize.checked;
+        persistSettings();
+        updateSummaryControls();
+    });
+    dom.summaryInterval.addEventListener('input', () => {
+        const value = Math.floor(Number(dom.summaryInterval.value));
+        if (Number.isFinite(value) && value >= 1) {
+            state.settings.summaryInterval = value;
+            persistSettings();
+        }
+    });
+    dom.summaryInterval.addEventListener('change', () => {
+        const value = summaryInterval();
+        dom.summaryInterval.value = value;
+        state.settings.summaryInterval = value;
         persistSettings();
     });
     dom.model.addEventListener('change', () => {
@@ -418,6 +546,7 @@ function bindEvents() {
 
     const clear = () => {
         resetMessages();
+        resetSummary();
         renderMessages();
         attachments.clear();
         dom.chatTitle.textContent = 'Новый диалог';

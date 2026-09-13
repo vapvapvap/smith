@@ -3,6 +3,8 @@ package com.smith.application.service;
 import com.smith.api.dto.AttachmentDto;
 import com.smith.api.dto.ChatCompletionRequest;
 import com.smith.api.dto.ChatCompletionResponse;
+import com.smith.api.dto.SummarizeRequest;
+import com.smith.api.dto.SummarizeResponse;
 import com.smith.domain.exception.UnsupportedAttachmentException;
 import com.smith.domain.model.ChatCompletion;
 import com.smith.domain.model.ChatRecord;
@@ -27,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -133,6 +136,31 @@ class ChatCompletionServiceTest {
 
         assertThatThrownBy(() -> service.complete(request))
                 .isInstanceOf(UnsupportedAttachmentException.class);
+    }
+
+    @Test
+    void summarizeDoesNotPersistAndUsesSummarizePrompt() {
+        when(provider.complete(any(ChatRequest.class))).thenReturn(new ChatCompletion(
+                "resp-1", ModelName.of(LlmModel.DEEPSEEK_FLASH), "краткое саммари", null,
+                FinishReason.STOP, new Usage(5, 7, 12), Instant.now()));
+
+        SummarizeRequest request = new SummarizeRequest();
+        request.setText("Пользователь: привет\n\nАссистент: привет");
+        request.setModel("DEEPSEEK_FLASH");
+
+        SummarizeResponse response = service.summarize(request);
+
+        assertThat(response.getSummary()).isEqualTo("краткое саммари");
+        assertThat(response.getUsage().getTotalTokens()).isEqualTo(12);
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(provider).complete(captor.capture());
+        ChatRequest built = captor.getValue();
+        assertThat(built.prompt().value()).contains("привет");
+        assertThat(built.systemPrompt()).isNotBlank();
+        assertThat(built.params().thinking()).isEqualTo(ThinkingMode.DISABLED);
+        assertThat(built.attachments()).isEmpty();
+        verify(repository, never()).save(any());
     }
 
     @Test
