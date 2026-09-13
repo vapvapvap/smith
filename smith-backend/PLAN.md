@@ -134,6 +134,9 @@ reasoningEffort), `Usage`, `ChatCompletion`.
 
 `ChatApi` — интерфейс с `@Operation`/`@ApiResponse` (описывает методы для Swagger):
 - `POST /api/v1/chat/completions`
+- `POST /api/v1/chat/completions/stream` (SSE)
+- `POST /api/v1/chat/summarize` (саммаризация контекста)
+- `POST /api/v1/chat/facts` (обновление key-value памяти / Sticky Facts)
 - `GET /api/v1/models`
 
 ## 7. Application-слой

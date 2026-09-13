@@ -3,6 +3,8 @@ package com.smith.application.service;
 import com.smith.api.dto.AttachmentDto;
 import com.smith.api.dto.ChatCompletionRequest;
 import com.smith.api.dto.ChatCompletionResponse;
+import com.smith.api.dto.FactsRequest;
+import com.smith.api.dto.FactsResponse;
 import com.smith.api.dto.SummarizeRequest;
 import com.smith.api.dto.SummarizeResponse;
 import com.smith.domain.exception.UnsupportedAttachmentException;
@@ -157,6 +159,33 @@ class ChatCompletionServiceTest {
         verify(provider).complete(captor.capture());
         ChatRequest built = captor.getValue();
         assertThat(built.prompt().value()).contains("привет");
+        assertThat(built.systemPrompt()).isNotBlank();
+        assertThat(built.params().thinking()).isEqualTo(ThinkingMode.DISABLED);
+        assertThat(built.attachments()).isEmpty();
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void factsDoesNotPersistAndMergesExistingFacts() {
+        when(provider.complete(any(ChatRequest.class))).thenReturn(new ChatCompletion(
+                "resp-1", ModelName.of(LlmModel.DEEPSEEK_FLASH), "цель: собрать ТЗ", null,
+                FinishReason.STOP, new Usage(9, 4, 13), Instant.now()));
+
+        FactsRequest request = new FactsRequest();
+        request.setText("Пользователь: нужен план проекта");
+        request.setFacts("заказчик: ООО Ромашка");
+        request.setModel("DEEPSEEK_FLASH");
+
+        FactsResponse response = service.facts(request);
+
+        assertThat(response.getFacts()).isEqualTo("цель: собрать ТЗ");
+        assertThat(response.getUsage().getTotalTokens()).isEqualTo(13);
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(provider).complete(captor.capture());
+        ChatRequest built = captor.getValue();
+        assertThat(built.prompt().value()).contains("заказчик: ООО Ромашка");
+        assertThat(built.prompt().value()).contains("нужен план проекта");
         assertThat(built.systemPrompt()).isNotBlank();
         assertThat(built.params().thinking()).isEqualTo(ThinkingMode.DISABLED);
         assertThat(built.attachments()).isEmpty();

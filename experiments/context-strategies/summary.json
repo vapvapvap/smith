@@ -1,0 +1,67 @@
+{
+  "as_is": {
+    "elapsed_sec": 27.7,
+    "total_main_tokens": 26890,
+    "total_service_tokens": 0,
+    "total_tokens": 26890,
+    "last_prompt_tokens": 3965,
+    "key_details_hit": 17,
+    "key_details_total": 17,
+    "key_details_missed": []
+  },
+  "sliding_window": {
+    "elapsed_sec": 31.5,
+    "total_main_tokens": 19708,
+    "total_service_tokens": 0,
+    "total_tokens": 19708,
+    "last_prompt_tokens": 2141,
+    "key_details_hit": 14,
+    "key_details_total": 17,
+    "key_details_missed": [
+      "Аудитория 18-45",
+      "Самовывоз",
+      "Русский язык"
+    ]
+  },
+  "sticky_facts": {
+    "elapsed_sec": 46.3,
+    "total_main_tokens": 18428,
+    "total_service_tokens": 13663,
+    "total_tokens": 32091,
+    "last_prompt_tokens": 1707,
+    "key_details_hit": 7,
+    "key_details_total": 17,
+    "key_details_missed": [
+      "Платформа iOS",
+      "Платформа Android",
+      "Срок 4 месяца",
+      "Аудитория 18-45",
+      "Оплата СБП",
+      "Оплата картой",
+      "Самовывоз",
+      "Геолокация",
+      "Push-уведомления",
+      "Русский язык"
+    ]
+  },
+  "summarize": {
+    "elapsed_sec": 42.3,
+    "total_main_tokens": 15128,
+    "total_service_tokens": 10390,
+    "total_tokens": 25518,
+    "last_prompt_tokens": 1829,
+    "key_details_hit": 17,
+    "key_details_total": 17,
+    "key_details_missed": []
+  },
+  "branching": {
+    "elapsed_sec": 42.8,
+    "prefix_tokens": 7764,
+    "branch_a_tokens": 25458,
+    "branch_b_tokens": 11877,
+    "branch_a_last_prompt": 4034,
+    "branch_b_last_prompt": 3772,
+    "branch_a_hits": 15,
+    "branch_b_hits": 12
+  }
+}

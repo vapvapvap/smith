@@ -104,19 +104,30 @@ export class MessageView {
             this.bubble.innerHTML = renderMarkdown(message.content);
         }
 
-        if (isUser) {
-            this.meta.textContent = '';
-            return;
-        }
-
+        this.meta.replaceChildren();
         const parts = [];
-        if (message.finishReason) {
-            parts.push(`завершено: ${message.finishReason}`);
+        if (!isUser) {
+            if (message.finishReason) {
+                parts.push(`завершено: ${message.finishReason}`);
+            }
+            const tokens = formatTokens(message.usage);
+            if (tokens) {
+                parts.push(tokens);
+            }
         }
-        const tokens = formatTokens(message.usage);
-        if (tokens) {
-            parts.push(tokens);
+        if (parts.length > 0) {
+            const metaText = document.createElement('span');
+            metaText.className = 'msg__meta-text';
+            metaText.textContent = parts.join(' · ');
+            this.meta.append(metaText);
         }
-        this.meta.textContent = parts.join(' · ');
+        if (!isSystem && !message.pending) {
+            const fork = document.createElement('button');
+            fork.type = 'button';
+            fork.className = 'msg__fork';
+            fork.title = 'Создать ветку от этого сообщения';
+            fork.textContent = 'Разветвить';
+            this.meta.append(fork);
+        }
     }
 }

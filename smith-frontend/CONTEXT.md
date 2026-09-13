@@ -191,6 +191,32 @@ chrome.exe --headless=new --disable-gpu --no-sandbox --no-first-run \
   rolling-контекст (`СЖАТО` + текущий вопрос, без дублирования истории),
   системное сообщение, учёт токенов.
 
+### Стратегии управления контекстом (2026-09-13)
+- Вместо галочки «Саммаризация контекста» — select `#context-strategy` (5 опций,
+  «Как есть» первой, дефолт). Активен только при включённом «Передавать
+  контекст». `state.settings.contextStrategy` (`CONTEXT_STRATEGIES`):
+  `as_is`, `sliding_window`, `sticky_facts`, `branching`, `summarize`.
+  Миграция: старый `summarize:true` -> `contextStrategy='summarize'`.
+- `buildPrompt()` — диспетчер: `as_is`/`branching` — весь диалог активной ветки;
+  `sliding_window` — последние `slidingWindowSize`; `sticky_facts` — блок фактов +
+  последние N; `summarize` — rolling-саммари.
+- `sticky_facts`: `state.facts` (`[{key,value}]`, localStorage `smith.facts`),
+  `maybeUpdateFacts()` после каждого хода -> `POST /chat/facts`; панель
+  `#facts-panel`; парсинг `factsToText`/`parseFactsText`.
+- `branching`: `state.branches` + `activeBranchId` (localStorage
+  `smith.branches`, миграция из `smith.messages`); кнопка `.msg__fork` у сообщения
+  (`forkBranchAt`), переключатель `#branch-switcher` в шапке и блок
+  `#branches-panel` в сайдбаре (список веток + кнопка `#fork-branch`);
+  `state.messages` — ссылка на активную ветку.
+- `updateContextControls()` показывает только поля выбранной стратегии: `as_is` —
+  ничего; `sliding_window` — «Последние N»; `sticky_facts` — «Последние N» +
+  панель фактов; `branching` — блок веток + переключатель; `summarize` —
+  «Каждые N».
+- Токены сервисных вызовов: пункты «Саммаризация» и «Факты» в `#token-stats`.
+- Эксперимент по стратегиям: `experiments/context-strategies/report.md`
+  (`as_is` и `summarize` — 17/17 деталей; `sliding_window` 14/17;
+  `sticky_facts` 7/17 из-за дрейфа фактов; `branching` A 15/17).
+
 ### Вложения (скрепка + drag-n-drop + vision)
 - `js/attachments.js` — состояние вложений в памяти, классификация
   (image / text / unsupported), чтение через `FileReader` (dataURL для картинок,
@@ -215,6 +241,10 @@ chrome.exe --headless=new --disable-gpu --no-sandbox --no-first-run \
   сжималась, её клипал `overflow:hidden`. Поэтому используется `max-height`.
 - **`.params { flex-shrink: 0 }`** обязателен: `overflow:hidden` обнуляет
   автоматический `min-height` flex-элемента, иначе блок схлопывается до summary.
+- **Атрибут `hidden` не скрывает элементы с `display: flex/grid` из CSS**
+  (авторский стиль перебивает UA-правило `[hidden]{display:none}`). Поэтому в
+  `base.css` добавлено `[hidden] { display: none !important; }` — не удалять;
+  без него скрытие стратегий/панелей через `element.hidden = true` не работает.
 - Нет автотестов и линтера; проверка ручная (браузер/DevTools).
 - После правок CSS нужен сброс кэша (Ctrl+F5).
 - В корне `smith-frontend` лежит пользовательский `screen.png` (скриншот бага) —
@@ -228,3 +258,7 @@ chrome.exe --headless=new --disable-gpu --no-sandbox --no-first-run \
 - Подсветка синтаксиса в блоках кода.
 - Автотесты/линтер (нужна установка Node) или минимальный CI-скрипт.
 - Хранение адреса бэкенда в UI (сейчас только через `config.js`/`localStorage`).
+- Доработка стратегии `sticky_facts` (см. `experiments/context-strategies/report.md`):
+  защита от «дрейфа фактов» — append-only, дедупликация, извлечение из всего
+  диалога, реже обновление. Доработка UX веток (`branching`): визуальный
+  индикатор checkpoint, переименование/удаление веток.
