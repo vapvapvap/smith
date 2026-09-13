@@ -191,6 +191,27 @@ chrome.exe --headless=new --disable-gpu --no-sandbox --no-first-run \
   rolling-контекст (`СЖАТО` + текущий вопрос, без дублирования истории),
   системное сообщение, учёт токенов.
 
+### Стратегии управления контекстом (2026-09-13)
+- Вместо галочки «Саммаризация контекста» — select `#context-strategy` (5 опций,
+  «Как есть» первой, дефолт). Активен только при включённом «Передавать
+  контекст». `state.settings.contextStrategy` (`CONTEXT_STRATEGIES`):
+  `as_is`, `sliding_window`, `sticky_facts`, `branching`, `summarize`.
+  Миграция: старый `summarize:true` -> `contextStrategy='summarize'`.
+- `buildPrompt()` — диспетчер: `as_is`/`branching` — весь диалог активной ветки;
+  `sliding_window` — последние `slidingWindowSize`; `sticky_facts` — блок фактов +
+  последние N; `summarize` — rolling-саммари.
+- `sticky_facts`: `state.facts` (`[{key,value}]`, localStorage `smith.facts`),
+  `maybeUpdateFacts()` после каждого хода -> `POST /chat/facts`; панель
+  `#facts-panel`; парсинг `factsToText`/`parseFactsText`.
+- `branching`: `state.branches` + `activeBranchId` (localStorage
+  `smith.branches`, миграция из `smith.messages`); кнопка `.msg__fork` у сообщения
+  (`forkBranchAt`) и переключатель `#branch-switcher` в шапке (`switchBranch`);
+  `state.messages` — ссылка на активную ветку.
+- Токены сервисных вызовов: пункты «Саммаризация» и «Факты» в `#token-stats`.
+- Эксперимент по стратегиям: `experiments/context-strategies/report.md`
+  (`as_is` и `summarize` — 17/17 деталей; `sliding_window` 14/17;
+  `sticky_facts` 7/17 из-за дрейфа фактов; `branching` A 15/17).
+
 ### Вложения (скрепка + drag-n-drop + vision)
 - `js/attachments.js` — состояние вложений в памяти, классификация
   (image / text / unsupported), чтение через `FileReader` (dataURL для картинок,

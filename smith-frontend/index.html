@@ -58,19 +58,33 @@
                     </label>
                 </section>
 
-                <section class="field field--summary">
-                    <label class="switch">
-                        <input type="checkbox" id="summarize-toggle" disabled>
-                        <span class="switch__track"><span class="switch__thumb"></span></span>
-                        <span class="switch__text">Саммаризация контекста</span>
-                    </label>
-                    <label class="field field--compact">
-                        <span class="field__label">Каждые <span class="hint" title="Через сколько сообщений диалога (вопрос + ответ) сжимать контекст в саммари.">i</span></span>
+                <section class="field field--strategy">
+                    <label class="field__label" for="context-strategy">Стратегия управления контекстом <span class="hint" title="Как готовится контекст диалога перед отправкой в модель. Доступно только при включённом «Передавать контекст».">i</span></label>
+                    <select class="input" id="context-strategy" disabled>
+                        <option value="as_is">Как есть (As is)</option>
+                        <option value="sliding_window">Скользящее окно (Sliding Window)</option>
+                        <option value="sticky_facts">Закреплённые факты (Sticky Facts)</option>
+                        <option value="branching">Ветки диалога (Branching)</option>
+                        <option value="summarize">Саммаризация (Summarization)</option>
+                    </select>
+                    <label class="field field--compact" id="sliding-window-ctl" hidden>
+                        <span class="field__label">Последние <span class="hint" title="Сколько последних сообщений диалога (вопрос + ответ) передавать в модель.">i</span></span>
                         <div class="summary-interval">
-                            <input class="input" type="number" id="summary-interval" min="1" step="1" value="10" disabled>
+                            <input class="input" type="number" id="sliding-window-size" min="1" step="1" value="10">
                             <span class="summary-interval__suffix">сообщений</span>
                         </div>
                     </label>
+                    <label class="field field--compact" id="summary-interval-ctl" hidden>
+                        <span class="field__label">Каждые <span class="hint" title="Через сколько сообщений диалога (вопрос + ответ) сжимать контекст в саммари.">i</span></span>
+                        <div class="summary-interval">
+                            <input class="input" type="number" id="summary-interval" min="1" step="1" value="10">
+                            <span class="summary-interval__suffix">сообщений</span>
+                        </div>
+                    </label>
+                    <div class="facts" id="facts-panel" hidden>
+                        <span class="field__label">Факты (ключ: значение)</span>
+                        <div class="facts__list" id="facts-list"></div>
+                    </div>
                 </section>
 
                 <details class="params" id="params">
@@ -146,6 +160,7 @@
                     </svg>
                 </button>
                 <span class="chat__title" id="chat-title">Новый диалог</span>
+                <select class="input branch-switcher" id="branch-switcher" title="Ветка диалога" hidden></select>
                 <button type="button" class="icon-btn" id="clear-chat" title="Очистить ленту" aria-label="Очистить ленту">
                     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>
@@ -167,6 +182,7 @@
                 <span class="token-stats__item">История диалога: <b id="stat-history">—</b></span>
                 <span class="token-stats__item">Ответ модели: <b id="stat-completion">—</b></span>
                 <span class="token-stats__item" id="stat-summary-item" hidden>Саммаризация: <b id="stat-summary">—</b></span>
+                <span class="token-stats__item" id="stat-facts-item" hidden>Факты: <b id="stat-facts">—</b></span>
             </div>
 
             <form class="composer" id="composer">

@@ -1,18 +1,25 @@
-import { fetchModels, streamCompletion, summarizeCompletion, me, logout } from './api.js';
+import { fetchModels, streamCompletion, summarizeCompletion, factsCompletion, me, logout } from './api.js';
 import { initAttachments } from './attachments.js';
 import { CONTEXT_CHAR_LIMIT } from './config.js';
 import { MessageView } from './render.js';
 import {
     state,
     defaultSettings,
+    CONTEXT_STRATEGIES,
     newId,
     loadState,
     persistSettings,
     persistMessages,
     persistSummary,
+    persistFacts,
     persistTheme,
     resetMessages,
     resetSummary,
+    resetFacts,
+    switchBranch,
+    forkBranchAt,
+    factsToText,
+    parseFactsText,
     isDialogMessage,
 } from './state.js';
 
@@ -21,8 +28,14 @@ const el = (id) => document.getElementById(id);
 const dom = {
     model: el('model'),
     context: el('context-toggle'),
-    summarize: el('summarize-toggle'),
+    contextStrategy: el('context-strategy'),
+    slidingWindowSize: el('sliding-window-size'),
+    slidingWindowCtl: el('sliding-window-ctl'),
     summaryInterval: el('summary-interval'),
+    summaryIntervalCtl: el('summary-interval-ctl'),
+    factsPanel: el('facts-panel'),
+    factsList: el('facts-list'),
+    branchSwitcher: el('branch-switcher'),
     newChat: el('new-chat'),
     clearChat: el('clear-chat'),
     messages: el('messages'),
@@ -34,6 +47,8 @@ const dom = {
     statCompletion: el('stat-completion'),
     statSummary: el('stat-summary'),
     statSummaryItem: el('stat-summary-item'),
+    statFacts: el('stat-facts'),
+    statFactsItem: el('stat-facts-item'),
     composer: el('composer'),
     prompt: el('prompt'),
     systemPrompt: el('system-prompt'),
@@ -104,8 +119,12 @@ function updateTokenStats() {
     const summaryTotal = summaryUsage
         ? (summaryUsage.promptTokens ?? 0) + (summaryUsage.completionTokens ?? 0)
         : 0;
+    const factsUsage = state.factsUsage;
+    const factsTotal = factsUsage
+        ? (factsUsage.promptTokens ?? 0) + (factsUsage.completionTokens ?? 0)
+        : 0;
 
-    if (usages.length === 0 && summaryTotal === 0) {
+    if (usages.length === 0 && summaryTotal === 0 && factsTotal === 0) {
         dom.tokenStats.hidden = true;
         return;
     }
@@ -114,7 +133,7 @@ function updateTokenStats() {
     const history = usages.reduce((sum, usage) => {
         const total = (usage.promptTokens ?? 0) + (usage.completionTokens ?? 0);
         return sum + total;
-    }, summaryTotal);
+    }, summaryTotal + factsTotal);
 
     dom.statPrompt.textContent = last ? (last.promptTokens ?? '—') : '—';
     dom.statHistory.textContent = history;
@@ -125,6 +144,13 @@ function updateTokenStats() {
         dom.statSummary.textContent = summaryTotal;
     } else {
         dom.statSummaryItem.hidden = true;
+    }
+
+    if (factsUsage) {
+        dom.statFactsItem.hidden = false;
+        dom.statFacts.textContent = factsTotal;
+    } else {
+        dom.statFactsItem.hidden = true;
     }
 
     dom.tokenStats.hidden = false;
@@ -164,16 +190,69 @@ function renderMessages() {
     updateTokenStats();
 }
 
-function updateSummaryControls() {
+function renderFacts() {
+    if (!dom.factsList) {
+        return;
+    }
+    dom.factsList.replaceChildren();
+    if (state.facts.length === 0) {
+        const empty = document.createElement('span');
+        empty.className = 'facts__empty';
+        empty.textContent = 'Факты появятся по ходу диалога';
+        dom.factsList.append(empty);
+        return;
+    }
+    for (const fact of state.facts) {
+        const row = document.createElement('div');
+        row.className = 'facts__row';
+        const key = document.createElement('span');
+        key.className = 'facts__key';
+        key.textContent = fact.key;
+        const value = document.createElement('span');
+        value.className = 'facts__value';
+        value.textContent = fact.value;
+        row.append(key, value);
+        dom.factsList.append(row);
+    }
+}
+
+function renderBranches() {
+    if (!dom.branchSwitcher) {
+        return;
+    }
+    dom.branchSwitcher.replaceChildren();
+    for (const branch of state.branches) {
+        const option = document.createElement('option');
+        option.value = branch.id;
+        option.textContent = branch.name;
+        dom.branchSwitcher.append(option);
+    }
+    dom.branchSwitcher.value = state.activeBranchId;
+}
+
+function updateContextControls() {
     const contextOn = dom.context.checked;
-    dom.summarize.disabled = !contextOn;
-    dom.summaryInterval.disabled = !(contextOn && dom.summarize.checked);
+    const strategy = state.settings.contextStrategy;
+    dom.contextStrategy.disabled = !contextOn;
+    dom.contextStrategy.value = strategy;
+
+    const usesWindow = strategy === CONTEXT_STRATEGIES.SLIDING_WINDOW
+        || strategy === CONTEXT_STRATEGIES.STICKY_FACTS;
+    dom.slidingWindowCtl.hidden = !(contextOn && usesWindow);
+    dom.summaryIntervalCtl.hidden = !(contextOn && strategy === CONTEXT_STRATEGIES.SUMMARIZE);
+    dom.factsPanel.hidden = !(contextOn && strategy === CONTEXT_STRATEGIES.STICKY_FACTS);
+    dom.branchSwitcher.hidden = !(contextOn && strategy === CONTEXT_STRATEGIES.BRANCHING);
+
+    document.documentElement.dataset.strategy = contextOn ? strategy : 'off';
+    renderFacts();
+    renderBranches();
 }
 
 function applySettingsToInputs() {
     const s = state.settings;
     dom.context.checked = !!s.context;
-    dom.summarize.checked = !!s.summarize;
+    dom.contextStrategy.value = s.contextStrategy;
+    dom.slidingWindowSize.value = s.slidingWindowSize ?? defaultSettings.slidingWindowSize;
     dom.summaryInterval.value = s.summaryInterval ?? defaultSettings.summaryInterval;
     el('thinking').value = s.thinking;
     el('reasoning_effort').value = s.reasoning_effort;
@@ -182,7 +261,7 @@ function applySettingsToInputs() {
     for (const key of numberFields) {
         el(key).value = s[key] ?? '';
     }
-    updateSummaryControls();
+    updateContextControls();
 }
 
 function populateModels() {
@@ -245,25 +324,54 @@ function summaryInterval() {
     return Number.isFinite(value) && value >= 1 ? value : defaultSettings.summaryInterval;
 }
 
+function slidingWindowSize() {
+    const value = Math.floor(Number(state.settings.slidingWindowSize));
+    return Number.isFinite(value) && value >= 1 ? value : defaultSettings.slidingWindowSize;
+}
+
+function fitContext(lines, current) {
+    const all = [...lines, `Пользователь: ${current}`];
+    let text = all.join('\n\n');
+    while (text.length > CONTEXT_CHAR_LIMIT && all.length > 1) {
+        all.shift();
+        text = all.join('\n\n');
+    }
+    return text;
+}
+
 function buildPrompt(history, current) {
     if (!state.settings.context) {
         return current;
     }
-    const lines = [];
-    let source = history;
-    if (state.settings.summarize && state.summary.text) {
-        lines.push(`Саммари предыдущего диалога:\n${state.summary.text}`);
-        source = history.filter(isDialogMessage).slice(state.summary.coveredCount);
-    }
-    lines.push(...dialogContentLines(source));
-    lines.push(`Пользователь: ${current}`);
+    const dialog = history.filter(isDialogMessage);
 
-    let text = lines.join('\n\n');
-    while (text.length > CONTEXT_CHAR_LIMIT && lines.length > 1) {
-        lines.shift();
-        text = lines.join('\n\n');
+    switch (state.settings.contextStrategy) {
+        case CONTEXT_STRATEGIES.SLIDING_WINDOW:
+            return fitContext(dialogContentLines(dialog.slice(-slidingWindowSize())), current);
+        case CONTEXT_STRATEGIES.STICKY_FACTS: {
+            const lines = [];
+            const factsText = factsToText(state.facts);
+            if (factsText) {
+                lines.push(`Известные факты о задаче:\n${factsText}`);
+            }
+            lines.push(...dialogContentLines(dialog.slice(-slidingWindowSize())));
+            return fitContext(lines, current);
+        }
+        case CONTEXT_STRATEGIES.SUMMARIZE: {
+            const lines = [];
+            let source = dialog;
+            if (state.summary.text) {
+                lines.push(`Саммари предыдущего диалога:\n${state.summary.text}`);
+                source = dialog.slice(state.summary.coveredCount);
+            }
+            lines.push(...dialogContentLines(source));
+            return fitContext(lines, current);
+        }
+        case CONTEXT_STRATEGIES.BRANCHING:
+        case CONTEXT_STRATEGIES.AS_IS:
+        default:
+            return fitContext(dialogContentLines(dialog), current);
     }
-    return text;
 }
 
 function accumulateUsage(total, usage) {
@@ -279,7 +387,7 @@ function accumulateUsage(total, usage) {
 
 async function maybeSummarize() {
     const s = state.settings;
-    if (!s.context || !s.summarize || state.summarizing) {
+    if (!s.context || s.contextStrategy !== CONTEXT_STRATEGIES.SUMMARIZE || state.summarizing) {
         return;
     }
     const dialog = state.messages.filter(isDialogMessage);
@@ -325,6 +433,39 @@ async function maybeSummarize() {
         state.summarizing = false;
         updateMessageView(systemMessage);
         persistMessages();
+        updateTokenStats();
+    }
+}
+
+async function maybeUpdateFacts() {
+    const s = state.settings;
+    if (!s.context || s.contextStrategy !== CONTEXT_STRATEGIES.STICKY_FACTS || state.updatingFacts) {
+        return;
+    }
+    const dialog = state.messages.filter(isDialogMessage);
+    const uncovered = dialog.slice(state.factsCoveredCount);
+    if (uncovered.length === 0) {
+        return;
+    }
+
+    const text = dialogContentLines(uncovered).join('\n\n');
+    const currentFacts = factsToText(state.facts);
+
+    state.updatingFacts = true;
+    try {
+        const result = await factsCompletion({ text, facts: currentFacts, model: s.model });
+        const parsed = parseFactsText(result?.facts || '');
+        if (parsed.length > 0) {
+            state.facts = parsed;
+        }
+        state.factsCoveredCount = dialog.length;
+        state.factsUsage = accumulateUsage(state.factsUsage, result?.usage);
+        persistFacts();
+        renderFacts();
+    } catch (error) {
+        showToast(`Не удалось обновить факты: ${error.message}`, true);
+    } finally {
+        state.updatingFacts = false;
         updateTokenStats();
     }
 }
@@ -460,7 +601,11 @@ async function send() {
         persistMessages();
         updateTokenStats();
         setStreaming(false);
-        maybeSummarize();
+        if (state.settings.contextStrategy === CONTEXT_STRATEGIES.SUMMARIZE) {
+            maybeSummarize();
+        } else if (state.settings.contextStrategy === CONTEXT_STRATEGIES.STICKY_FACTS) {
+            maybeUpdateFacts();
+        }
     }
 }
 
@@ -487,12 +632,25 @@ function bindSettings() {
     dom.context.addEventListener('change', () => {
         state.settings.context = dom.context.checked;
         persistSettings();
-        updateSummaryControls();
+        updateContextControls();
     });
-    dom.summarize.addEventListener('change', () => {
-        state.settings.summarize = dom.summarize.checked;
+    dom.contextStrategy.addEventListener('change', () => {
+        state.settings.contextStrategy = dom.contextStrategy.value;
         persistSettings();
-        updateSummaryControls();
+        updateContextControls();
+    });
+    dom.slidingWindowSize.addEventListener('input', () => {
+        const value = Math.floor(Number(dom.slidingWindowSize.value));
+        if (Number.isFinite(value) && value >= 1) {
+            state.settings.slidingWindowSize = value;
+            persistSettings();
+        }
+    });
+    dom.slidingWindowSize.addEventListener('change', () => {
+        const value = slidingWindowSize();
+        dom.slidingWindowSize.value = value;
+        state.settings.slidingWindowSize = value;
+        persistSettings();
     });
     dom.summaryInterval.addEventListener('input', () => {
         const value = Math.floor(Number(dom.summaryInterval.value));
@@ -547,7 +705,10 @@ function bindEvents() {
     const clear = () => {
         resetMessages();
         resetSummary();
+        resetFacts();
         renderMessages();
+        renderBranches();
+        renderFacts();
         attachments.clear();
         dom.chatTitle.textContent = 'Новый диалог';
         closeSidebar();
@@ -555,6 +716,29 @@ function bindEvents() {
     };
     dom.newChat.addEventListener('click', clear);
     dom.clearChat.addEventListener('click', clear);
+
+    dom.messagesList.addEventListener('click', (event) => {
+        const forkButton = event.target.closest('.msg__fork');
+        if (!forkButton) {
+            return;
+        }
+        const messageEl = forkButton.closest('.msg');
+        if (!messageEl) {
+            return;
+        }
+        const branch = forkBranchAt(messageEl.dataset.id);
+        if (branch) {
+            renderBranches();
+            showToast(`Создана «${branch.name}» от этой точки`);
+        }
+    });
+
+    dom.branchSwitcher.addEventListener('change', () => {
+        if (switchBranch(dom.branchSwitcher.value)) {
+            renderMessages();
+            updateTokenStats();
+        }
+    });
 
     dom.themeToggle.addEventListener('click', () => {
         state.theme = state.theme === 'dark' ? 'light' : 'dark';

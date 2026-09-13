@@ -100,6 +100,27 @@ curl -N -X POST http://localhost:8080/api/v1/chat/completions/stream \
 curl http://localhost:8080/api/v1/models
 ```
 
+### POST /api/v1/chat/summarize — саммаризация контекста
+
+```bash
+curl -X POST http://localhost:8080/api/v1/chat/summarize \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Пользователь: ... Ассистент: ...","model":"DEEPSEEK_FLASH"}'
+```
+
+Возвращает `{summary, usage}`; запись в `chat_request` не создаётся.
+
+### POST /api/v1/chat/facts — обновление key-value памяти (Sticky Facts)
+
+```bash
+curl -X POST http://localhost:8080/api/v1/chat/facts \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Пользователь: ...","facts":"цель: ...","model":"DEEPSEEK_FLASH"}'
+```
+
+Возвращает `{facts, usage}` (формат «ключ: значение» построчно); запись в
+`chat_request` не создаётся.
+
 ## Параметры запроса
 
 | Поле | Обязательно | По умолчанию | Передаётся в DeepSeek |

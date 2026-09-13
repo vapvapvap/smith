@@ -102,6 +102,20 @@ export async function summarizeCompletion(payload) {
     return response.json();
 }
 
+export async function factsCompletion(payload) {
+    const response = await fetch(apiUrl('/chat/facts'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include',
+    });
+    ensureAuthorized(response);
+    if (!response.ok) {
+        throw await toError(response);
+    }
+    return response.json();
+}
+
 function parseEvent(raw) {
     let event = 'message';
     const dataLines = [];

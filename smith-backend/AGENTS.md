@@ -53,6 +53,12 @@ springdoc-openapi 3.1.1.
   `{summary, usage}`. Вызывает LLM с фиксированным системным промптом
   саммаризации и `thinking=disabled`; НЕ пишет в `chat_request` (внутренняя
   операция), возвращает `usage` для учёта расхода на клиенте.
+- Факты диалога (Sticky Facts): `POST /api/v1/chat/facts`
+  (`{text, facts, model}`) -> `{facts, usage}`. LLM с фиксированным
+  `FACTS_SYSTEM_PROMPT` обновляет key-value память (формат «ключ: значение»,
+  по одному на строку), `thinking=disabled`; НЕ пишет в `chat_request`,
+  возвращает `usage`. Промпт запрещает вопросы/статусы/следующие шаги и требует
+  сохранять актуальные факты.
 - Авторизация — session cookie (`JSESSIONID`) + Spring Security form login на
   `POST /api/auth/login` (`username`/`password`, `application/x-www-form-urlencoded`).
   Пользователи — таблица `app_user` (BCrypt-хэши), порт `UserRepository`,
@@ -82,7 +88,67 @@ springdoc-openapi 3.1.1.
 - Проверка: Swagger `http://localhost:8080/swagger-ui.html`;
   модели `GET /api/v1/models`; sync `POST /api/v1/chat/completions`;
   SSE `POST /api/v1/chat/completions/stream`;
-  саммаризация `POST /api/v1/chat/summarize`.
+  саммаризация `POST /api/v1/chat/summarize`;
+  факты `POST /api/v1/chat/facts`.
 - Авторизация: `POST /api/auth/login` (form-urlencoded), `POST /api/auth/logout`,
   `GET /api/auth/me`. Пользователи: `vap`, `lex`, `max`, `heh`, `art`
   (пароли — BCrypt в `V4__seed_users.sql`, см. итоги сессии).
+
+## Мониторинг сборки и запуска (обязательно)
+
+Долгие операции (`build`, `bootRun`, `java -jar`) запускать в фоне и
+**активно опрашивать состояние**, а не ждать фиксированную паузу вслепую.
+
+**Как правильно запускать в фоне (проверено):**
+
+```powershell
+Start-Process -FilePath <exe> -ArgumentList <args> `
+  -WorkingDirectory <dir> `
+  -RedirectStandardOutput <log> -RedirectStandardError <err> `
+  -WindowStyle Hidden -PassThru | Select-Object Id
+```
+
+- Обязательно `-WindowStyle Hidden`. **НЕ использовать `-NoNewWindow`:** при нём
+  `Start-Process` не возвращает управление shell-инструменту до завершения
+  дочернего процесса — общение «зависает», хотя сборка/сервер уже работают.
+  С `-WindowStyle Hidden` команда возвращает PID за доли секунды (проверено).
+- Если команда запуска **не вернула управление сразу** — это ошибка запуска
+  (скорее всего `-NoNewWindow`): не ждать таймаут, а продолжить опрос лога
+  отдельными командами.
+
+Признаки готовности (останавливать ожидание сразу, как появились):
+
+- **сборка** — строка `BUILD SUCCESSFUL` или `BUILD FAILED` в логе;
+- **backend запущен** — строка лога `Started AiAgentApplication in <N> seconds`
+  **или** слушающий порт: `Get-NetTCPConnection -LocalPort 8080 -State Listen`;
+- **жив ли процесс** — `Get-Process -Id <PID> -ErrorAction SilentlyContinue`.
+
+Правила:
+
+- Отсутствие новых строк в логе — **не** признак зависания: после старта сервер
+  может молчать. Судить о готовности по маркеру/порту, а о зависании — по
+  тому, что процесс мёртв или маркера нет дольше разумного времени.
+- Проверять каждые ~30 c; если готово — не ждать остаток паузы, продолжать
+  работу сразу.
+- **Никогда не ждать завершения сборки одной блокирующей командой:** запустить
+  в фоне, а результат проверять отдельными командами `Get-Content`/`Get-Process`.
+
+### Контроль зависания при сборке/деплое/запуске (обязательно)
+
+- Любую сборку, деплой и запуск вести с активным опросом **не реже, чем раз в
+  30 секунд**: маркер в логе (`BUILD SUCCESSFUL`/`BUILD FAILED`,
+  `Started AiAgentApplication`), слушающий порт, живость процесса.
+- Если процесс жив, а маркера ещё нет — это **не** зависание. Продолжать опрос
+  до разумного предела (сборка обычно ≤60 c, старт ≤30 c).
+- **Признак реального зависания:** процесс мёртв, порт не поднялся либо маркера
+  нет заметно дольше обычного (сборка >3 мин, старт >1 мин). Тогда: прочитать
+  `.err.log`, проверить, не занят ли порт, не заблокирован ли Gradle; при
+  необходимости остановить процесс и перезапустить.
+- **Причина «зависания общения» — `-NoNewWindow`.** При фоновом запуске он
+  держит shell до завершения процесса; сборка может быть давно готова, а агент
+  ждёт таймаут. Лечится `-WindowStyle Hidden` (см. выше).
+- Перед перезапуском бэкенда убедиться, что старый процесс остановлен
+  (`Get-NetTCPConnection -LocalPort 8080 -State Listen`), иначе порт занят.
+- `java -jar` требует **полный путь к jar** и рабочую директорию `api-impl`,
+  иначе не подхватывается `application-local.yml` (ошибка
+  `Unable to access jarfile`).

@@ -194,6 +194,27 @@ Apache HttpClient5 5.6.4 (httpcore5 5.4.3).
   `ChatCompletionServiceTest.summarizeDoesNotPersistAndUsesSummarizePrompt`,
   `ChatControllerTest.summarizeReturnsJson` / `summarizeValidationErrorReturns400`.
 
+### Факты диалога / Sticky Facts (2026-09-13)
+- `POST /api/v1/chat/facts` (`FactsRequest{text, facts, model}` ->
+  `FactsResponse{facts, usage}`): обновление key-value памяти диалога.
+- `ChatCompletionService.facts(...)`: `FACTS_SYSTEM_PROMPT`, `thinking=DISABLED`,
+  вызов `llmProvider.complete(...)`, НЕ сохраняет в `chat_request`, возвращает
+  `usage`. Промпт запрещает вопросы/статусы/следующие шаги и требует сохранять
+  актуальные факты (усилен после эксперимента: LLM-экстрактор склонен к
+  «дрейфу фактов» — галлюцинациям и вытеснению требований).
+- DTO в `api`; endpoint в `ChatController`. Тесты:
+  `ChatCompletionServiceTest.factsDoesNotPersistAndMergesExistingFacts`,
+  `ChatControllerTest.factsReturnsJson` / `factsValidationErrorReturns400`.
+
+### Стратегии управления контекстом и эксперимент (2026-09-13)
+- На клиенте 5 стратегий: «Как есть» (дефолт), скользящее окно, закреплённые
+  факты, ветки диалога, саммаризация. Реализация и UI — в `smith-frontend`.
+- Эксперимент `experiments/context-strategies/` (реальные вызовы DeepSeek,
+  сценарий «собираем ТЗ»): `as_is` 17/17 деталей (26 890 токенов),
+  `summarize` 17/17 (25 518), `sliding_window` 14/17 (19 708),
+  `sticky_facts` 7/17 (32 091, дрейф фактов), `branching` A 15/17.
+  Подробности — `experiments/context-strategies/report.md`.
+
 ### Проверка e2e (локально, профиль `local`)
 - `GET /api/v1/models` — 2 модели (алиас + имя провайдера).
 - `POST /chat/completions` — реальный ответ DeepSeek (DEEPSEEK_FLASH),

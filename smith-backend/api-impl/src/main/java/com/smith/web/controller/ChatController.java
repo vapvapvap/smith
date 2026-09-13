@@ -4,6 +4,8 @@ import com.smith.api.ChatApi;
 import com.smith.api.dto.ChatCompletionRequest;
 import com.smith.api.dto.ChatCompletionResponse;
 import com.smith.api.dto.ChatModelDto;
+import com.smith.api.dto.FactsRequest;
+import com.smith.api.dto.FactsResponse;
 import com.smith.api.dto.SummarizeRequest;
 import com.smith.api.dto.SummarizeResponse;
 import com.smith.application.service.ChatCompletionService;
@@ -56,6 +58,12 @@ public class ChatController implements ChatApi {
     @Override
     public SummarizeResponse summarize(@Valid @RequestBody SummarizeRequest request) {
         return completionService.summarize(request);
+    }
+
+    @PostMapping(value = "/chat/facts", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Override
+    public FactsResponse facts(@Valid @RequestBody FactsRequest request) {
+        return completionService.facts(request);
     }
 
     @GetMapping("/models")
